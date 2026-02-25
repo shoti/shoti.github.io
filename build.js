@@ -4,7 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const BASE_URL = 'https://mtvarelishvili.com';
+const BASE_URL = 'https://blog.mtvarelishvili.com';
 const POSTS_DIR = path.join(__dirname, 'content', 'posts');
 const TEMPLATES_DIR = path.join(__dirname, 'templates');
 const STATIC_DIR = path.join(__dirname, 'static');
