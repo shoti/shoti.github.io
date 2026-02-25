@@ -1,0 +1,11 @@
+{
+  "name": "blog",
+  "version": "1.0.0",
+  "description": "Static minimalist blog — mtvarelishvili.com",
+  "scripts": {
+    "build": "node build.js",
+    "new": "node build.js new"
+  },
+  "author": "Shota Mtvarelishvili <mtvarelishvili@proton.me>",
+  "license": "MIT"
+}

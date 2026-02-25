@@ -1,0 +1,14 @@
+<h1>Archive</h1>
+{{#each years}}
+<section class="archive-year">
+  <h2>{{year}}</h2>
+  <ul class="archive-list">
+    {{#each posts}}
+    <li>
+      <time datetime="{{date}}">{{dateFormatted}}</time>
+      <a href="/posts/{{slug}}/">{{title}}</a>
+    </li>
+    {{/each}}
+  </ul>
+</section>
+{{/each}}

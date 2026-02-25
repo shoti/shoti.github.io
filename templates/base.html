@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{title}}</title>
+  <meta name="description" content="{{description}}">
+  <meta name="author" content="Shota Mtvarelishvili">
+  <link rel="canonical" href="{{canonical}}">
+  <meta property="og:title" content="{{title}}">
+  <meta property="og:description" content="{{description}}">
+  <meta property="og:type" content="{{ogType}}">
+  <meta property="og:url" content="{{canonical}}">
+  <link rel="alternate" type="application/rss+xml" title="Shota Mtvarelishvili" href="/rss.xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=IBM+Plex+Sans:wght@600&family=IBM+Plex+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  {{head}}
+</head>
+<body>
+  {{#if readingProgress}}<div class="reading-progress" id="reading-progress"></div>{{/if}}
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="header-title">
+        <a href="/" class="site-name">Shota Mtvarelishvili</a>
+        <span class="site-tagline">Senior Software Engineer · Tbilisi, Georgia</span>
+      </div>
+      <nav class="site-nav">
+        <a href="/">Blog</a>
+        <a href="/archive/">Archive</a>
+        <a href="/about/">About</a>
+        <a href="/rss.xml">RSS</a>
+        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">◐</button>
+      </nav>
+    </div>
+  </header>
+  <main>
+    {{content}}
+  </main>
+  <footer class="site-footer">
+    <p>© 2026 Shota Mtvarelishvili · <a href="mailto:mtvarelishvili@proton.me">mtvarelishvili@proton.me</a> · <a href="https://github.com/shoti/blog">Source</a></p>
+  </footer>
+  <script src="/js/main.js"></script>
+</body>
+</html>

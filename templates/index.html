@@ -1,0 +1,12 @@
+<p class="intro">Senior Software Engineer writing about code and things.</p>
+<section class="post-list">
+  {{#each posts}}
+  <article class="post-item">
+    <time datetime="{{date}}">{{dateFormatted}}</time>
+    <div>
+      <a href="/posts/{{slug}}/">{{title}}</a>
+      <span class="post-desc">{{description}}</span>
+    </div>
+  </article>
+  {{/each}}
+</section>
