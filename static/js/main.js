@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       root.setAttribute('data-theme', next);
       localStorage.setItem('theme', next);
+      var r = (parseInt(toggle.dataset.r || '0', 10) + 180);
+      toggle.dataset.r = r;
+      toggle.style.transform = 'rotate(' + r + 'deg)';
     });
   }
 

@@ -159,6 +159,7 @@ a:hover {
   font-size: 1rem;
   padding: 0.1rem 0.4rem;
   line-height: 1;
+  transition: transform 0.3s ease;
 }
 
 /* Footer */
@@ -346,6 +347,15 @@ main {
   text-underline-offset: 2px;
 }
 
+/* External link indicator */
+.post-body a[href^="http"]:not([href*="shoti.github.io"])::after,
+.about-body a[href^="http"]:not([href*="shoti.github.io"])::after {
+  content: "\00a0\2197";
+  font-size: 0.7em;
+  text-decoration: none;
+  display: inline-block;
+}
+
 .post-nav {
   display: flex;
   justify-content: space-between;
@@ -435,6 +445,58 @@ main {
   background: var(--accent);
   z-index: 100;
   transition: width 50ms linear;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0s !important;
+  }
+}
+
+/* Print */
+@media print {
+  body {
+    max-width: 100%;
+    padding: 0;
+    color: #000;
+    background: #fff;
+    font-size: 12pt;
+  }
+
+  .site-header,
+  .site-footer,
+  .reading-progress,
+  .post-nav {
+    display: none !important;
+  }
+
+  a {
+    color: #000;
+  }
+
+  .post-body a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    word-break: break-all;
+  }
+
+  .post-body pre {
+    border: 1px solid #ccc;
+    page-break-inside: avoid;
+  }
+
+  .post-body blockquote {
+    border-left-color: #999;
+  }
+
+  .post-body img,
+  h2, h3, h4 {
+    page-break-inside: avoid;
+    page-break-after: avoid;
+  }
 }
 
 /* Utilities */
