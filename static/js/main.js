@@ -29,6 +29,16 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // Active nav link
+  var p = window.location.pathname;
+  var navLinks = document.querySelectorAll('.site-nav a');
+  for (var i = 0; i < navLinks.length; i++) {
+    var href = navLinks[i].getAttribute('href');
+    if (href === '/' ? p === '/' : p.startsWith(href)) {
+      navLinks[i].classList.add('nav-active');
+    }
+  }
+
   // Reading time
   var el = document.querySelector('.reading-time');
   if (el) {

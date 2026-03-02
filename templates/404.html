@@ -1,4 +1,16 @@
 <article class="not-found">
   <h1>404</h1>
-  <p>Page not found. <a href="/">Go home</a>.</p>
+  <p>Page not found. Maybe try one of these:</p>
 </article>
+{{#if posts}}
+<section class="post-list">
+  {{#each posts}}
+  <article class="post-item">
+    <time datetime="{{date}}">{{dateFormatted}}</time>
+    <div>
+      <a href="/posts/{{slug}}/">{{title}}</a>
+    </div>
+  </article>
+  {{/each}}
+</section>
+{{/if}}

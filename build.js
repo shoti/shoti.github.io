@@ -497,7 +497,7 @@ var aboutPage = wrapInBase(aboutContent, {
 writeFile(path.join(DIST_DIR, 'about', 'index.html'), aboutPage);
 
 // 404 page
-var notFoundContent = render(notFoundTemplate, {});
+var notFoundContent = render(notFoundTemplate, { posts: homePosts.slice(0, 5) });
 var notFoundPage = wrapInBase(notFoundContent, {
   title: '404 \u2014 Shota Mtvarelishvili',
   ogTitle: '404',

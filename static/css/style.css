@@ -147,7 +147,8 @@ a:hover {
   color: var(--text);
 }
 
-.site-nav a:hover {
+.site-nav a:hover,
+.site-nav a.nav-active {
   color: var(--accent);
 }
 
