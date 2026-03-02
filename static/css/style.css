@@ -5,6 +5,14 @@
   box-sizing: border-box;
 }
 
+/* Theme transitions (enabled after initial load to prevent flash) */
+.transitions-ready,
+.transitions-ready *,
+.transitions-ready *::before,
+.transitions-ready *::after {
+  transition: color 0.3s, background-color 0.3s, border-color 0.3s;
+}
+
 /* Base */
 :root {
   --bg: #fefefe;
@@ -41,6 +49,38 @@
 html {
   font-size: 18px;
   -webkit-text-size-adjust: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) var(--bg);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
+}
+
+/* Text selection */
+::selection {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.post-body pre::selection,
+.post-body pre *::selection,
+.post-body code::selection {
+  background: var(--muted);
+  color: var(--bg);
 }
 
 body {

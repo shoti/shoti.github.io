@@ -7,6 +7,13 @@ document.addEventListener('DOMContentLoaded', function () {
   var stored = localStorage.getItem('theme');
   if (stored) root.setAttribute('data-theme', stored);
 
+  // Enable theme transitions after initial paint to prevent flash
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      root.classList.add('transitions-ready');
+    });
+  });
+
   if (toggle) {
     toggle.addEventListener('click', function () {
       var current = root.getAttribute('data-theme');
