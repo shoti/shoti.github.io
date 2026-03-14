@@ -15,6 +15,10 @@ const REQUIRED_POST_FIELDS = ['title', 'slug', 'date', 'body'];
 // --- Minimal Markdown Parser ---
 
 function parseMarkdown(text) {
+  return parseMarkdownInner(text, 0);
+}
+
+function parseMarkdownInner(text, depth) {
   const lines = text.split('\n');
   const html = [];
   let i = 0;
@@ -39,7 +43,7 @@ function parseMarkdown(text) {
       }
       i++; // skip closing ```
       const escaped = escapeHtml(code.join('\n'));
-      if (lang) {
+      if (lang && /^[a-zA-Z0-9-]+$/.test(lang)) {
         html.push('<pre><code class="language-' + lang + '">' + escaped + '</code></pre>');
       } else {
         html.push('<pre><code>' + escaped + '</code></pre>');
@@ -63,14 +67,14 @@ function parseMarkdown(text) {
       continue;
     }
 
-    // Blockquote
-    if (line.trim().startsWith('> ')) {
+    // Blockquote (max 10 levels deep to prevent stack overflow)
+    if (line.trim().startsWith('> ') && depth < 10) {
       const quoteLines = [];
       while (i < lines.length && lines[i].trim().startsWith('> ')) {
         quoteLines.push(lines[i].trim().slice(2));
         i++;
       }
-      html.push('<blockquote>' + parseMarkdown(quoteLines.join('\n')) + '</blockquote>');
+      html.push('<blockquote>' + parseMarkdownInner(quoteLines.join('\n'), depth + 1) + '</blockquote>');
       continue;
     }
 
@@ -100,7 +104,7 @@ function parseMarkdown(text) {
     if (/^!\[/.test(line.trim())) {
       const imgMatch = line.trim().match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
       if (imgMatch) {
-        html.push('<p><img src="' + imgMatch[2] + '" alt="' + imgMatch[1] + '"></p>');
+        html.push('<p><img src="' + escapeHtml(imgMatch[2]) + '" alt="' + escapeHtml(imgMatch[1]) + '"></p>');
         i++;
         continue;
       }
@@ -134,9 +138,9 @@ function inline(text) {
   // Links
   text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
   // Bold
-  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   // Italic
-  text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
   // Inline code
   text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
   // Line breaks
