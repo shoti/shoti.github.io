@@ -125,6 +125,8 @@ function parseMarkdown(text) {
 }
 
 function inline(text) {
+  // Escape HTML first to prevent XSS — markdown syntax chars ([], (), *, `) are unaffected
+  text = escapeHtml(text);
   // Images
   text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
   // Links
