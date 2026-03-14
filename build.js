@@ -559,6 +559,11 @@ var sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n' +
 
 writeFile(path.join(DIST_DIR, 'sitemap.xml'), sitemap);
 
+// --- robots.txt ---
+
+writeFile(path.join(DIST_DIR, 'robots.txt'),
+  'User-agent: *\nAllow: /\n\nSitemap: ' + BASE_URL + '/sitemap.xml\n');
+
 // --- Done ---
 
 var elapsed = Date.now() - startTime;
