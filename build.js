@@ -42,6 +42,11 @@ function parseMarkdownInner(text, depth) {
         i++;
       }
       i++; // skip closing ```
+      if (lang === 'flow') {
+        const steps = code.map(step => step.trim()).filter(Boolean);
+        html.push(renderFlowDiagram(steps));
+        continue;
+      }
       const escaped = escapeHtml(code.join('\n'));
       if (lang && /^[a-zA-Z0-9-]+$/.test(lang)) {
         html.push('<pre><code class="language-' + lang + '">' + escaped + '</code></pre>');
@@ -128,6 +133,12 @@ function parseMarkdownInner(text, depth) {
   }
 
   return html.join('\n');
+}
+
+function renderFlowDiagram(steps) {
+  if (steps.length === 0) return '';
+  const items = steps.map(step => '<li>' + escapeHtml(step) + '</li>').join('');
+  return '<ol class="flow-diagram" role="list" aria-label="Process flow">' + items + '</ol>';
 }
 
 function inline(text) {
@@ -608,3 +619,5 @@ writeFile(path.join(DIST_DIR, 'robots.txt'),
 
 const elapsed = Date.now() - startTime;
 console.log('Build complete: ' + posts.length + ' posts in ' + elapsed + 'ms');
+
+module.exports = { parseMarkdown };

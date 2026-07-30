@@ -334,6 +334,60 @@ main {
   margin-bottom: 0.3em;
 }
 
+.post-body .flow-diagram {
+  counter-reset: flow-step;
+  list-style: none;
+  margin: 2rem 0;
+  padding: 0;
+}
+
+.post-body .flow-diagram li {
+  counter-increment: flow-step;
+  position: relative;
+  margin: 0 0 2.25rem;
+  padding: 0.85rem 2.75rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  background: var(--code-bg);
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.post-body .flow-diagram li::before {
+  content: counter(flow-step);
+  position: absolute;
+  top: 50%;
+  left: 0.75rem;
+  display: grid;
+  width: 1.35rem;
+  height: 1.35rem;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  transform: translateY(-50%);
+}
+
+.post-body .flow-diagram li:not(:last-child)::after {
+  content: "\2193";
+  position: absolute;
+  bottom: -1.85rem;
+  left: 50%;
+  color: var(--accent);
+  font-family: var(--font-heading);
+  font-size: 1.2rem;
+  line-height: 1;
+  transform: translateX(-50%);
+}
+
+.post-body .flow-diagram li:last-child {
+  margin-bottom: 0;
+}
+
 .post-body hr {
   border: none;
   border-top: 1px solid var(--border);
@@ -496,6 +550,11 @@ main {
     border-left-color: #999;
   }
 
+  .post-body .flow-diagram li {
+    background: #fff;
+    page-break-inside: avoid;
+  }
+
   .post-body img,
   h2, h3, h4 {
     page-break-inside: avoid;
@@ -525,5 +584,11 @@ main {
 
   .post-header h1 {
     font-size: 1.5rem;
+  }
+
+  .post-body .flow-diagram li {
+    padding-right: 1rem;
+    padding-left: 2.6rem;
+    text-align: left;
   }
 }
