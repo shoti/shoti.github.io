@@ -3,12 +3,12 @@
     <h1>{{postTitle}}</h1>
     <div class="post-meta">
       <time datetime="{{date}}">{{dateFormatted}}</time>
-      <span class="reading-time" data-words="{{wordCount}}"></span>
+      <span class="reading-time">{{readingTime}} min read</span>
       {{#if tags}}<span class="post-tags">{{tags}}</span>{{/if}}
     </div>
   </header>
   <div class="post-body">
-    {{body}}
+    {{{body}}}
   </div>
   <nav class="post-nav">
     {{#if prevPost}}<a href="/posts/{{prevSlug}}/" class="post-nav-prev">← {{prevTitle}}</a>{{/if}}

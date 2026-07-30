@@ -15,9 +15,14 @@ Edit the created file in `content/posts/`, write content in the `body` field usi
 ## Build Locally
 
 ```bash
+npm test
 npm run build
 npx serve dist
 ```
+
+Published posts are validated during the build. Their filename must match the
+`slug`, dates must be real `YYYY-MM-DD` calendar dates, and `tags` must be an
+array of strings.
 
 ## Structure
 

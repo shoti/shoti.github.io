@@ -10,12 +10,25 @@ const TEMPLATES_DIR = path.join(__dirname, 'templates');
 const STATIC_DIR = path.join(__dirname, 'static');
 const DIST_DIR = path.join(__dirname, 'dist');
 
-const REQUIRED_POST_FIELDS = ['title', 'slug', 'date', 'body'];
+const REQUIRED_POST_FIELDS = ['title', 'slug', 'date', 'description', 'body', 'tags'];
 
 // --- Minimal Markdown Parser ---
 
 function parseMarkdown(text) {
+  if (typeof text !== 'string') {
+    throw new TypeError('Markdown content must be a string');
+  }
   return parseMarkdownInner(text, 0);
+}
+
+function isBlockStart(line, depth) {
+  const trimmed = line.trim();
+  return trimmed.startsWith('```') ||
+    /^(#{1,4})\s+(.+)$/.test(line) ||
+    (depth < 10 && trimmed.startsWith('> ')) ||
+    /^[-*]\s+/.test(trimmed) ||
+    /^\d+\.\s+/.test(trimmed) ||
+    /^(-{3,}|\*{3,}|_{3,})$/.test(trimmed);
 }
 
 function parseMarkdownInner(text, depth) {
@@ -109,7 +122,8 @@ function parseMarkdownInner(text, depth) {
     if (/^!\[/.test(line.trim())) {
       const imgMatch = line.trim().match(/^!\[([^\]]*)\]\(([^)]+)\)$/);
       if (imgMatch) {
-        html.push('<p><img src="' + escapeHtml(imgMatch[2]) + '" alt="' + escapeHtml(imgMatch[1]) + '"></p>');
+        const image = renderImage(imgMatch[1], imgMatch[2]);
+        html.push('<p>' + image + '</p>');
         i++;
         continue;
       }
@@ -117,13 +131,7 @@ function parseMarkdownInner(text, depth) {
 
     // Paragraph: collect consecutive non-empty, non-special lines
     const para = [];
-    while (i < lines.length && lines[i].trim() !== '' &&
-           !lines[i].trim().startsWith('```') &&
-           !lines[i].trim().startsWith('#') &&
-           !lines[i].trim().startsWith('> ') &&
-           !/^[-*]\s+/.test(lines[i].trim()) &&
-           !/^\d+\.\s+/.test(lines[i].trim()) &&
-           !/^(-{3,}|\*{3,}|_{3,})$/.test(lines[i].trim())) {
+    while (i < lines.length && lines[i].trim() !== '' && !isBlockStart(lines[i], depth)) {
       para.push(lines[i]);
       i++;
     }
@@ -145,9 +153,16 @@ function inline(text) {
   // Escape HTML first to prevent XSS — markdown syntax chars ([], (), *, `) are unaffected
   text = escapeHtml(text);
   // Images
-  text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+  text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_match, alt, url) => renderEscapedImage(alt, url));
   // Links
-  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, label, url) => {
+    const safeUrl = sanitizeUrl(url, true);
+    if (!safeUrl) return label;
+    const externalAttrs = /^https?:/i.test(safeUrl)
+      ? ' target="_blank" rel="noopener noreferrer"'
+      : '';
+    return '<a href="' + safeUrl + '"' + externalAttrs + '>' + label + '</a>';
+  });
   // Bold
   text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   // Italic
@@ -160,11 +175,29 @@ function inline(text) {
 }
 
 function escapeHtml(text) {
-  return text
+  return String(text)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function sanitizeUrl(url, allowMailto) {
+  const trimmed = String(url).trim();
+  const normalized = trimmed.replace(/[\u0000-\u0020\u007f]+/g, '').toLowerCase();
+  const scheme = normalized.match(/^([a-z][a-z0-9+.-]*):/);
+  const allowedSchemes = allowMailto ? ['http', 'https', 'mailto'] : ['http', 'https'];
+  if (scheme && !allowedSchemes.includes(scheme[1])) return null;
+  return trimmed;
+}
+
+function renderEscapedImage(alt, url) {
+  const safeUrl = sanitizeUrl(url, false);
+  return safeUrl ? '<img src="' + safeUrl + '" alt="' + alt + '" loading="lazy" decoding="async">' : alt;
+}
+
+function renderImage(alt, url) {
+  return renderEscapedImage(escapeHtml(alt), sanitizeUrl(url, false) ? escapeHtml(String(url).trim()) : '');
 }
 
 // --- Template Engine ---
@@ -209,7 +242,9 @@ function render(template, data) {
       const key = eachMatch[1];
       const bodyStart = i + eachMatch[0].length;
       const bodyEnd = findBalancedBlock(template, '{{#each ', '{{/each}}', bodyStart);
-      if (bodyEnd === -1) break;
+      if (bodyEnd === -1) {
+        throw new Error('Unclosed {{#each ' + key + '}} block');
+      }
       const body = template.slice(bodyStart, bodyEnd);
       const arr = data[key];
       if (Array.isArray(arr)) {
@@ -225,7 +260,9 @@ function render(template, data) {
       const key = ifMatch[1];
       const bodyStart = i + ifMatch[0].length;
       const bodyEnd = findBalancedBlock(template, '{{#if ', '{{/if}}', bodyStart);
-      if (bodyEnd === -1) break;
+      if (bodyEnd === -1) {
+        throw new Error('Unclosed {{#if ' + key + '}} block');
+      }
       const body = template.slice(bodyStart, bodyEnd);
       if (data[key]) {
         result += render(body, data);
@@ -234,11 +271,20 @@ function render(template, data) {
       continue;
     }
 
-    // {{variable}}
+    // {{{variable}}} — explicitly trusted HTML
+    const rawVarMatch = template.slice(i).match(/^\{\{\{(\w+)\}\}\}/);
+    if (rawVarMatch) {
+      const key = rawVarMatch[1];
+      result += data[key] !== undefined && data[key] !== null ? String(data[key]) : '';
+      i += rawVarMatch[0].length;
+      continue;
+    }
+
+    // {{variable}} — escaped by default
     const varMatch = template.slice(i).match(/^\{\{(\w+)\}\}/);
     if (varMatch) {
       const key = varMatch[1];
-      result += data[key] !== undefined ? data[key] : '';
+      result += data[key] !== undefined && data[key] !== null ? escapeHtml(data[key]) : '';
       i += varMatch[0].length;
       continue;
     }
@@ -254,9 +300,9 @@ function render(template, data) {
 // --- Utility ---
 
 function formatDate(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
+  const d = new Date(dateStr + 'T00:00:00Z');
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+  return months[d.getUTCMonth()] + ' ' + d.getUTCDate() + ', ' + d.getUTCFullYear();
 }
 
 function wordCount(text) {
@@ -264,7 +310,7 @@ function wordCount(text) {
 }
 
 function escapeXml(text) {
-  return text
+  return String(text)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -292,9 +338,8 @@ function writeFile(filePath, content) {
 }
 
 function generateOgImage(title) {
-  const escapedTitle = escapeHtml(title);
-  const fontSize = escapedTitle.length > 50 ? 52 : escapedTitle.length > 30 ? 60 : 72;
-  const lines = wrapSvgText(escapedTitle, fontSize, 1000);
+  const fontSize = title.length > 50 ? 52 : title.length > 30 ? 60 : 72;
+  const lines = wrapSvgText(title, fontSize, 1000);
   const lineCount = (lines.match(/<tspan/g) || []).length || 1;
   const textBlockHeight = lineCount * fontSize * 1.25;
   const textY = (630 - textBlockHeight) / 2 + fontSize;
@@ -324,35 +369,55 @@ function wrapSvgText(text, fontSize, maxWidth) {
   }
   if (current.trim()) lines.push(current.trim());
   return lines.slice(0, 3).map((line, idx) => {
-    return '<tspan x="600" dy="' + (idx === 0 ? 0 : fontSize * 1.25) + '">' + line + '</tspan>';
+    return '<tspan x="600" dy="' + (idx === 0 ? 0 : fontSize * 1.25) + '">' + escapeHtml(line) + '</tspan>';
   }).join('');
 }
 
 function validatePost(post, filename) {
+  if (!post || typeof post !== 'object' || Array.isArray(post)) {
+    throw new Error('Invalid post ' + filename + ': expected a JSON object');
+  }
   const missing = REQUIRED_POST_FIELDS.filter(f => post[f] === undefined || post[f] === null);
   if (missing.length > 0) {
-    console.error('Invalid post ' + filename + ': missing fields: ' + missing.join(', '));
-    process.exit(1);
+    throw new Error('Invalid post ' + filename + ': missing fields: ' + missing.join(', '));
+  }
+  for (const field of ['title', 'slug', 'date', 'description', 'body']) {
+    if (typeof post[field] !== 'string') {
+      throw new Error('Invalid post ' + filename + ': ' + field + ' must be a string');
+    }
+  }
+  if (!post.title.trim()) {
+    throw new Error('Invalid post ' + filename + ': title cannot be empty');
   }
   if (!/^\d{4}-\d{2}-\d{2}$/.test(post.date)) {
-    console.error('Invalid post ' + filename + ': date must be YYYY-MM-DD, got "' + post.date + '"');
-    process.exit(1);
+    throw new Error('Invalid post ' + filename + ': date must be YYYY-MM-DD, got "' + post.date + '"');
+  }
+  const parsedDate = new Date(post.date + 'T00:00:00Z');
+  if (Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== post.date) {
+    throw new Error('Invalid post ' + filename + ': date is not a real calendar date: "' + post.date + '"');
   }
   if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(post.slug)) {
-    console.error('Invalid post ' + filename + ': slug contains invalid characters: "' + post.slug + '"');
-    process.exit(1);
+    throw new Error('Invalid post ' + filename + ': slug contains invalid characters: "' + post.slug + '"');
+  }
+  if (path.basename(filename, '.json') !== post.slug) {
+    throw new Error('Invalid post ' + filename + ': filename must match slug "' + post.slug + '.json"');
+  }
+  if (!Array.isArray(post.tags) || post.tags.some(tag => typeof tag !== 'string' || !tag.trim())) {
+    throw new Error('Invalid post ' + filename + ': tags must be an array of non-empty strings');
   }
 }
 
 // --- New Post Command ---
 
-if (process.argv[2] === 'new') {
-  const title = process.argv.slice(3).join(' ');
+function createNewPost(titleParts, postsDir = POSTS_DIR) {
+  const title = titleParts.join(' ').trim();
   if (!title) {
-    console.error('Usage: npm run new "Post Title"');
-    process.exit(1);
+    throw new Error('Usage: npm run new "Post Title"');
   }
   const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  if (!slug) {
+    throw new Error('Post title must contain at least one letter or number');
+  }
   const date = new Date().toISOString().slice(0, 10);
   const post = {
     title: title,
@@ -363,11 +428,23 @@ if (process.argv[2] === 'new') {
     description: '',
     body: ''
   };
-  const filePath = path.join(POSTS_DIR, slug + '.json');
-  fs.mkdirSync(POSTS_DIR, { recursive: true });
+  const filePath = path.join(postsDir, slug + '.json');
+  if (fs.existsSync(filePath)) {
+    throw new Error('Post already exists: ' + filePath);
+  }
+  fs.mkdirSync(postsDir, { recursive: true });
   fs.writeFileSync(filePath, JSON.stringify(post, null, 2) + '\n', 'utf-8');
   console.log('Created: ' + filePath);
-  process.exit(0);
+}
+
+if (require.main === module && process.argv[2] === 'new') {
+  try {
+    createNewPost(process.argv.slice(3));
+    process.exit(0);
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
 }
 
 // --- Build ---
@@ -383,13 +460,40 @@ const aboutTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'about.html'), 'u
 const notFoundTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, '404.html'), 'utf-8');
 
 // Load and validate posts
-const postFiles = fs.readdirSync(POSTS_DIR).filter(f => f.endsWith('.json'));
-const posts = postFiles.map(f => {
-  const post = JSON.parse(fs.readFileSync(path.join(POSTS_DIR, f), 'utf-8'));
-  if (!post.draft) validatePost(post, f);
-  return post;
-}).filter(p => !p.draft)
-  .sort((a, b) => b.date.localeCompare(a.date));
+function readJson(filePath, label) {
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  } catch (error) {
+    throw new Error('Could not parse ' + label + ': ' + error.message);
+  }
+}
+
+function loadPosts(postsDir = POSTS_DIR) {
+  const postFiles = fs.readdirSync(postsDir).filter(f => f.endsWith('.json'));
+  return postFiles.map(filename => {
+    const post = readJson(path.join(postsDir, filename), 'post ' + filename);
+    if (!post || typeof post !== 'object' || Array.isArray(post)) {
+      throw new Error('Invalid post ' + filename + ': expected a JSON object');
+    }
+    if (post.draft !== undefined && typeof post.draft !== 'boolean') {
+      throw new Error('Invalid post ' + filename + ': draft must be a boolean');
+    }
+    if (post.draft !== true) validatePost(post, filename);
+    return post;
+  }).filter(post => post.draft !== true)
+    .sort((a, b) => b.date.localeCompare(a.date));
+}
+
+function loadAbout(filePath = path.join(__dirname, 'content', 'about.json')) {
+  const about = readJson(filePath, 'about content');
+  if (!about || typeof about !== 'object' || Array.isArray(about) ||
+      typeof about.heading !== 'string' || typeof about.body !== 'string') {
+    throw new Error('Invalid ' + path.basename(filePath) + ': heading and body must be strings');
+  }
+  return about;
+}
+
+const posts = loadPosts();
 
 // Parse markdown once per post and cache the HTML
 for (const post of posts) {
@@ -444,7 +548,7 @@ posts.forEach((post, idx) => {
     postTitle: post.title,
     date: post.date,
     dateFormatted: formatDate(post.date),
-    wordCount: post._words,
+    readingTime: Math.max(1, Math.round(post._words / 200)),
     tags: tags,
     body: post._html,
     prevPost: prevPost ? true : false,
@@ -456,7 +560,7 @@ posts.forEach((post, idx) => {
   });
 
   // Structured data for blog post
-  const structuredData = JSON.stringify({
+  const structuredData = serializeJsonForHtml({
     '@context': 'https://schema.org',
     '@type': 'BlogPosting',
     headline: post.title,
@@ -516,13 +620,13 @@ const archivePage = wrapInBase(archiveContent, {
 writeFile(path.join(DIST_DIR, 'archive', 'index.html'), archivePage);
 
 // About page
-const aboutData = JSON.parse(fs.readFileSync(path.join(__dirname, 'content', 'about.json'), 'utf-8'));
+const aboutData = loadAbout();
 const aboutBody = parseMarkdown(aboutData.body);
 const aboutContent = render(aboutTemplate, {
   heading: aboutData.heading,
   body: aboutBody
 });
-const personSchema = JSON.stringify({
+const personSchema = serializeJsonForHtml({
   '@context': 'https://schema.org',
   '@type': 'Person',
   name: 'Shota Mtvarelishvili',
@@ -620,4 +724,23 @@ writeFile(path.join(DIST_DIR, 'robots.txt'),
 const elapsed = Date.now() - startTime;
 console.log('Build complete: ' + posts.length + ' posts in ' + elapsed + 'ms');
 
-module.exports = { parseMarkdown };
+function serializeJsonForHtml(value) {
+  return JSON.stringify(value).replace(/[<>&\u2028\u2029]/g, character => ({
+    '<': '\\u003c',
+    '>': '\\u003e',
+    '&': '\\u0026',
+    '\u2028': '\\u2028',
+    '\u2029': '\\u2029'
+  })[character]);
+}
+
+module.exports = {
+  createNewPost,
+  generateOgImage,
+  loadAbout,
+  loadPosts,
+  parseMarkdown,
+  render,
+  serializeJsonForHtml,
+  validatePost
+};

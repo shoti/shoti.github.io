@@ -24,7 +24,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=IBM+Plex+Sans:wght@600&family=IBM+Plex+Serif:ital@0;1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
-  {{head}}
+  {{{head}}}
 </head>
 <body>
   {{#if readingProgress}}<div class="reading-progress" id="reading-progress"></div>{{/if}}
@@ -39,12 +39,12 @@
         <a href="/archive/">Archive</a>
         <a href="/about/">About</a>
         <a href="/rss.xml">RSS</a>
-        <button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode">◐</button>
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false">◐</button>
       </nav>
     </div>
   </header>
   <main>
-    {{content}}
+    {{{content}}}
   </main>
   <footer class="site-footer">
     <p>© 2026 Shota Mtvarelishvili · <a href="mailto:mtvarelishvili@proton.me">mtvarelishvili@proton.me</a> · <a href="https://github.com/shoti/shoti.github.io">Source</a></p>
