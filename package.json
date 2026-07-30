@@ -4,7 +4,8 @@
   "description": "Static minimalist blog — mtvarelishvili.com",
   "scripts": {
     "build": "node build.js",
-    "new": "node build.js new"
+    "new": "node build.js new",
+    "test": "node test/build.test.js"
   },
   "author": "Shota Mtvarelishvili <mtvarelishvili@proton.me>",
   "license": "MIT"
