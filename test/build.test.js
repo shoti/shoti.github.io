@@ -122,10 +122,18 @@ const post = fs.readFileSync(
   path.join(distDir, 'posts', 'break-it-to-make-it', 'index.html'),
   'utf8'
 );
-assert.match(home, /<main>\s*<p class="intro">/);
-assert.doesNotMatch(home, /&lt;p class=&quot;intro&quot;/);
+const notFound = fs.readFileSync(path.join(distDir, '404.html'), 'utf8');
+const themeBootstrapIndex = home.indexOf("localStorage.getItem('theme')");
+const stylesheetIndex = home.indexOf('<link rel="stylesheet" href="/css/style.css">');
+assert.ok(themeBootstrapIndex !== -1 && themeBootstrapIndex < stylesheetIndex,
+  'Stored theme must be applied before the stylesheet to prevent a theme flash');
+assert.match(home, /<a class="skip-link" href="#main-content">Skip to content<\/a>/);
+assert.match(home, /<main id="main-content">\s*<h1 class="intro">/);
+assert.doesNotMatch(home, /&lt;h1 class=&quot;intro&quot;/);
 assert.match(post, /<span class="reading-time">\d+ min read<\/span>/);
+assert.match(post, /role="progressbar" aria-label="Reading progress"/);
 assert.match(post, /<div class="post-body">\s*<p>/);
 assert.doesNotMatch(post, /\{\{\{?[\w#/ ]+\}?\}\}/);
+assert.match(notFound, /<a href="\/">Go back to the blog<\/a>/);
 
 console.log('Build tests passed');
