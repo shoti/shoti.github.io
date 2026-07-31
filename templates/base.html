@@ -6,6 +6,7 @@
   <title>{{title}}</title>
   <meta name="description" content="{{description}}">
   <meta name="author" content="Shota Mtvarelishvili">
+  <meta name="color-scheme" content="light dark">
   <link rel="canonical" href="{{canonical}}">
   <meta property="og:title" content="{{ogTitle}}">
   <meta property="og:description" content="{{description}}">
@@ -20,30 +21,37 @@
   {{#if ogImage}}<meta name="twitter:image" content="{{ogImage}}">{{/if}}
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="alternate" type="application/rss+xml" title="Shota Mtvarelishvili" href="/rss.xml">
+  <script>
+    try {
+      const theme = localStorage.getItem('theme');
+      if (theme === 'dark' || theme === 'light') document.documentElement.dataset.theme = theme;
+    } catch {}
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&family=IBM+Plex+Sans:wght@600&family=IBM+Plex+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&amp;family=IBM+Plex+Sans:wght@500;600&amp;family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400;1,600&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
   {{{head}}}
 </head>
 <body>
-  {{#if readingProgress}}<div class="reading-progress" id="reading-progress"></div>{{/if}}
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  {{#if readingProgress}}<div class="reading-progress" id="reading-progress" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>{{/if}}
   <header class="site-header">
     <div class="header-inner">
       <div class="header-title">
         <a href="/" class="site-name">Shota Mtvarelishvili</a>
         <span class="site-tagline">Senior Software Engineer · Tbilisi, Georgia</span>
       </div>
-      <nav class="site-nav">
+      <nav class="site-nav" aria-label="Primary">
         <a href="/">Blog</a>
         <a href="/archive/">Archive</a>
         <a href="/about/">About</a>
         <a href="/rss.xml">RSS</a>
-        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false">◐</button>
+        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch to dark mode" aria-pressed="false"><span aria-hidden="true">◐</span></button>
       </nav>
     </div>
   </header>
-  <main>
+  <main id="main-content">
     {{{content}}}
   </main>
   <footer class="site-footer">

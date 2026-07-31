@@ -31,16 +31,47 @@ function themeControlState(theme) {
   };
 }
 
+function subscribeToMediaChanges(mediaQuery, listener) {
+  if (typeof mediaQuery.addEventListener !== 'function') return false;
+  mediaQuery.addEventListener('change', listener);
+  return true;
+}
+
 function isNavActive(pathname, href) {
   return href === '/'
     ? pathname === '/' || pathname.startsWith('/posts/')
     : pathname.startsWith(href);
 }
 
-function calculateReadingProgress(scrollTop, scrollHeight, viewportHeight) {
-  const maxScroll = scrollHeight - viewportHeight;
+function calculateReadingProgress(scrollTop, contentHeight, viewportHeight, contentTop = 0) {
+  const maxScroll = contentHeight - viewportHeight;
   if (maxScroll <= 0) return 0;
-  return Math.min(100, Math.max(0, scrollTop / maxScroll * 100));
+  return Math.min(100, Math.max(0, (scrollTop - contentTop) / maxScroll * 100));
+}
+
+function updateReadingProgressBar(bar, content, scrollTop, viewportHeight, documentHeight) {
+  const progress = calculateReadingProgress(
+    scrollTop,
+    content?.offsetHeight || documentHeight,
+    viewportHeight,
+    content?.offsetTop || 0
+  );
+  bar.style.transform = `scaleX(${progress / 100})`;
+  bar.setAttribute('aria-valuenow', String(Math.round(progress)));
+  return progress;
+}
+
+function createFrameScheduler(callback, scheduleFrame = requestAnimationFrame) {
+  let queued = false;
+  return () => {
+    if (queued) return false;
+    queued = true;
+    scheduleFrame(() => {
+      callback();
+      queued = false;
+    });
+    return true;
+  };
 }
 
 if (typeof document !== 'undefined') {
@@ -60,6 +91,7 @@ if (typeof document !== 'undefined') {
       toggle.setAttribute('aria-label', state.label);
     };
     updateThemeControl();
+    subscribeToMediaChanges(mediaQuery, updateThemeControl);
 
     // Enable theme transitions after initial paint to prevent flash
     requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -89,15 +121,16 @@ if (typeof document !== 'undefined') {
     // Reading progress bar
     const bar = document.getElementById('reading-progress');
     if (bar) {
-      const updateReadingProgress = () => {
-        const progress = calculateReadingProgress(
-          scrollY,
-          document.documentElement.scrollHeight,
-          innerHeight
-        );
-        bar.style.width = `${progress}%`;
-      };
-      window.addEventListener('scroll', updateReadingProgress, { passive: true });
+      const article = document.querySelector('.post');
+      const updateReadingProgress = () => updateReadingProgressBar(
+        bar,
+        article,
+        scrollY,
+        innerHeight,
+        document.documentElement.scrollHeight
+      );
+      const queueReadingProgressUpdate = createFrameScheduler(updateReadingProgress);
+      window.addEventListener('scroll', queueReadingProgressUpdate, { passive: true });
       window.addEventListener('resize', updateReadingProgress);
       updateReadingProgress();
     }
@@ -107,10 +140,13 @@ if (typeof document !== 'undefined') {
 if (typeof module !== 'undefined') {
   module.exports = {
     calculateReadingProgress,
+    createFrameScheduler,
     isNavActive,
     readStoredTheme,
     resolveTheme,
+    subscribeToMediaChanges,
     themeControlState,
+    updateReadingProgressBar,
     writeStoredTheme
   };
 }

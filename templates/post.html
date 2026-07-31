@@ -10,7 +10,7 @@
   <div class="post-body">
     {{{body}}}
   </div>
-  <nav class="post-nav">
+  <nav class="post-nav" aria-label="Post navigation">
     {{#if prevPost}}<a href="/posts/{{prevSlug}}/" class="post-nav-prev">← {{prevTitle}}</a>{{/if}}
     {{#if nextPost}}<a href="/posts/{{nextSlug}}/" class="post-nav-next">{{nextTitle}} →</a>{{/if}}
   </nav>
