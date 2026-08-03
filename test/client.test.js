@@ -2,14 +2,25 @@
 
 const assert = require('assert');
 const {
+  applyReaderPreferences,
   calculateReadingProgress,
+  createTableOfContentsEntries,
   createFrameScheduler,
+  dismissReaderSettings,
+  initializeTableOfContents,
   isNavActive,
+  normalizeReaderPreferences,
+  readReaderPreferences,
   readStoredTheme,
+  readerControlState,
   resolveTheme,
+  shouldDismissReaderSettings,
+  slugifyHeading,
+  stepReaderSize,
   subscribeToMediaChanges,
   themeControlState,
   updateReadingProgressBar,
+  writeReaderPreferences,
   writeStoredTheme
 } = require('../static/js/main');
 
@@ -27,6 +38,138 @@ assert.strictEqual(writeStoredTheme('light', () => ({
 })), true);
 assert.strictEqual(writtenTheme, 'light');
 assert.strictEqual(writeStoredTheme('dark', () => { throw new Error('storage blocked'); }), false);
+
+assert.deepStrictEqual(normalizeReaderPreferences({
+  font: 'sans',
+  size: 'large',
+  spacing: 'relaxed'
+}), { font: 'sans', size: 'large', spacing: 'relaxed' });
+assert.deepStrictEqual(normalizeReaderPreferences({
+  font: 'comic-sans',
+  size: 'giant',
+  spacing: 'wide'
+}), { font: 'serif', size: 'medium', spacing: 'comfortable' });
+assert.deepStrictEqual(readReaderPreferences(() => ({
+  getItem: key => ({
+    'reader-font': 'sans',
+    'reader-size': 'x-large',
+    'reader-spacing': 'compact'
+  })[key]
+})), { font: 'sans', size: 'x-large', spacing: 'compact' });
+assert.deepStrictEqual(readReaderPreferences(() => { throw new Error('storage blocked'); }), {
+  font: 'serif',
+  size: 'medium',
+  spacing: 'comfortable'
+});
+
+const storedReaderPreferences = {};
+assert.strictEqual(writeReaderPreferences({ font: 'sans', size: 'large', spacing: 'relaxed' }, () => ({
+  setItem: (key, value) => { storedReaderPreferences[key] = value; }
+})), true);
+assert.deepStrictEqual(storedReaderPreferences, {
+  'reader-font': 'sans',
+  'reader-size': 'large',
+  'reader-spacing': 'relaxed'
+});
+assert.strictEqual(writeReaderPreferences({}, () => { throw new Error('storage blocked'); }), false);
+
+const readerRoot = { dataset: {} };
+assert.deepStrictEqual(applyReaderPreferences(readerRoot, { font: 'sans', size: 'small', spacing: 'compact' }), {
+  font: 'sans', size: 'small', spacing: 'compact'
+});
+assert.deepStrictEqual(readerRoot.dataset, {
+  readerFont: 'sans', readerSize: 'small', readerSpacing: 'compact'
+});
+assert.strictEqual(stepReaderSize('medium', 1), 'large');
+assert.strictEqual(stepReaderSize('small', -1), 'small');
+assert.strictEqual(stepReaderSize('x-large', 1), 'x-large');
+assert.deepStrictEqual(readerControlState({ font: 'serif', size: 'medium', spacing: 'comfortable' }), {
+  font: 'serif',
+  size: 'medium',
+  spacing: 'comfortable',
+  sizeLabel: '100%',
+  canDecrease: true,
+  canIncrease: true
+});
+
+assert.strictEqual(slugifyHeading('A Better Reading Experience!'), 'a-better-reading-experience');
+assert.strictEqual(slugifyHeading('...'), 'section');
+assert.deepStrictEqual(createTableOfContentsEntries([
+  { level: 2, title: 'Why this matters' },
+  { level: 3, title: 'The details' },
+  { level: 2, title: 'Why this matters' }
+]), [
+  { id: 'section-why-this-matters', level: 2, title: 'Why this matters' },
+  { id: 'section-the-details', level: 3, title: 'The details' },
+  { id: 'section-why-this-matters-2', level: 2, title: 'Why this matters' }
+]);
+assert.deepStrictEqual(createTableOfContentsEntries([
+  { id: 'section-existing-anchor', level: 2, title: 'Different text' }
+]), [
+  { id: 'section-existing-anchor', level: 2, title: 'Different text' }
+]);
+
+const fakeHeadings = [
+  { id: 'section-first', tagName: 'H2', textContent: 'First' },
+  { id: 'section-detail', tagName: 'H3', textContent: 'Detail' },
+  { id: 'section-last', tagName: 'H2', textContent: 'Last' }
+];
+const fakeList = {
+  children: [],
+  appendChild(child) { this.children.push(child); }
+};
+const fakeCount = { textContent: '' };
+const fakeContainer = {
+  hidden: true,
+  querySelector: selector => ({
+    '#post-toc-list': fakeList,
+    '#post-toc-count': fakeCount
+  })[selector] || null
+};
+const originalDocument = global.document;
+global.document = {
+  createElement: tagName => ({
+    tagName,
+    children: [],
+    appendChild(child) { this.children.push(child); }
+  })
+};
+try {
+  const initializedEntries = initializeTableOfContents(
+    fakeContainer,
+    { querySelectorAll: () => fakeHeadings }
+  );
+  assert.strictEqual(initializedEntries.length, 3);
+  assert.strictEqual(fakeContainer.hidden, false);
+  assert.strictEqual(fakeCount.textContent, '(3)');
+  assert.strictEqual(fakeList.children.length, 3);
+  assert.strictEqual(fakeList.children[0].className, 'toc-level-2');
+  assert.strictEqual(fakeList.children[0].children[0].href, '#section-first');
+  assert.strictEqual(fakeList.children[0].children[0].textContent, 'First');
+
+  const shortContainer = { hidden: true };
+  assert.deepStrictEqual(initializeTableOfContents(
+    shortContainer,
+    { querySelectorAll: () => fakeHeadings.slice(0, 2) }
+  ), []);
+  assert.strictEqual(shortContainer.hidden, true);
+} finally {
+  if (originalDocument === undefined) delete global.document;
+  else global.document = originalDocument;
+}
+
+let summaryFocused = false;
+const readerSettings = {
+  open: true,
+  contains: target => target === 'inside',
+  querySelector: selector => selector === 'summary' ? { focus: () => { summaryFocused = true; } } : null
+};
+assert.strictEqual(shouldDismissReaderSettings(readerSettings, 'inside'), false);
+assert.strictEqual(shouldDismissReaderSettings(readerSettings, 'outside'), true);
+assert.strictEqual(dismissReaderSettings(readerSettings, true), true);
+assert.strictEqual(readerSettings.open, false);
+assert.strictEqual(summaryFocused, true);
+assert.strictEqual(dismissReaderSettings(readerSettings, true), false);
 
 assert.strictEqual(resolveTheme('light', true), 'light');
 assert.strictEqual(resolveTheme(null, true), 'dark');

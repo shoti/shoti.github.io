@@ -1,12 +1,50 @@
 <article class="post">
   <header class="post-header">
     <h1>{{postTitle}}</h1>
-    <div class="post-meta">
-      <time datetime="{{date}}">{{dateFormatted}}</time>
-      <span class="reading-time">{{readingTime}} min read</span>
-      {{#if tags}}<span class="post-tags">{{tags}}</span>{{/if}}
+    <div class="post-header-details">
+      <div class="post-meta">
+        <time datetime="{{date}}">{{dateFormatted}}</time>
+        <span class="reading-time">{{readingTime}} min read</span>
+        {{#if tags}}<span class="post-tags">{{tags}}</span>{{/if}}
+      </div>
+      <details class="reader-settings">
+        <summary aria-label="Reading settings"><span aria-hidden="true">Aa</span></summary>
+        <div class="reader-settings-panel">
+          <div class="reader-settings-heading">Reading settings</div>
+          <fieldset>
+            <legend>Text size</legend>
+            <div class="reader-size-control">
+              <button type="button" data-reader-size-step="-1" aria-label="Decrease text size">−</button>
+              <output id="reader-size-value" aria-live="polite">100%</output>
+              <button type="button" data-reader-size-step="1" aria-label="Increase text size">+</button>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Typeface</legend>
+            <div class="reader-options">
+              <button type="button" data-reader-font="serif" aria-pressed="true">Serif</button>
+              <button type="button" data-reader-font="sans" aria-pressed="false">Sans</button>
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend>Line spacing</legend>
+            <div class="reader-options reader-spacing-options">
+              <button type="button" data-reader-spacing="compact" aria-pressed="false">Compact</button>
+              <button type="button" data-reader-spacing="comfortable" aria-pressed="true">Comfortable</button>
+              <button type="button" data-reader-spacing="relaxed" aria-pressed="false">Relaxed</button>
+            </div>
+          </fieldset>
+          <button class="reader-reset" type="button" id="reader-reset">Reset to defaults</button>
+        </div>
+      </details>
     </div>
   </header>
+  <details class="post-toc" id="post-toc" hidden>
+    <summary>In this article <span id="post-toc-count"></span></summary>
+    <nav aria-label="Table of contents">
+      <ol id="post-toc-list"></ol>
+    </nav>
+  </details>
   <div class="post-body">
     {{{body}}}
   </div>

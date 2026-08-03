@@ -18,7 +18,24 @@ function parseMarkdown(text) {
   if (typeof text !== 'string') {
     throw new TypeError('Markdown content must be a string');
   }
-  return parseMarkdownInner(text, 0);
+  return parseMarkdownInner(text, 0, new Map());
+}
+
+function slugifyHeading(text) {
+  const slug = String(text)
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || 'section';
+}
+
+function uniqueHeadingId(text, headingCounts) {
+  const base = 'section-' + slugifyHeading(text);
+  const count = (headingCounts.get(base) || 0) + 1;
+  headingCounts.set(base, count);
+  return count === 1 ? base : base + '-' + count;
 }
 
 function isBlockStart(line, depth) {
@@ -31,7 +48,7 @@ function isBlockStart(line, depth) {
     /^(-{3,}|\*{3,}|_{3,})$/.test(trimmed);
 }
 
-function parseMarkdownInner(text, depth) {
+function parseMarkdownInner(text, depth, headingCounts) {
   const lines = text.split('\n');
   const html = [];
   let i = 0;
@@ -73,7 +90,8 @@ function parseMarkdownInner(text, depth) {
     const headingMatch = line.match(/^(#{1,4})\s+(.+)$/);
     if (headingMatch) {
       const level = headingMatch[1].length;
-      html.push('<h' + level + '>' + inline(headingMatch[2]) + '</h' + level + '>');
+      const id = uniqueHeadingId(headingMatch[2], headingCounts);
+      html.push('<h' + level + ' id="' + id + '">' + inline(headingMatch[2]) + '</h' + level + '>');
       i++;
       continue;
     }
@@ -92,7 +110,7 @@ function parseMarkdownInner(text, depth) {
         quoteLines.push(lines[i].trim().slice(2));
         i++;
       }
-      html.push('<blockquote>' + parseMarkdownInner(quoteLines.join('\n'), depth + 1) + '</blockquote>');
+      html.push('<blockquote>' + parseMarkdownInner(quoteLines.join('\n'), depth + 1, headingCounts) + '</blockquote>');
       continue;
     }
 

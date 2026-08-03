@@ -25,6 +25,11 @@ assert.strictEqual(parseMarkdown('```flow\n\n```'), '');
 
 // Regression: non-heading hash-prefixed text previously caused an infinite loop.
 assert.strictEqual(parseMarkdown('#hashtag'), '<p>#hashtag</p>');
+assert.strictEqual(
+  parseMarkdown('## Why this matters\n\n## Why this matters'),
+  '<h2 id="section-why-this-matters">Why this matters</h2>\n<h2 id="section-why-this-matters-2">Why this matters</h2>'
+);
+assert.match(parseMarkdown('## Main Content'), /^<h2 id="section-main-content">/);
 
 // Excessive blockquote nesting must degrade to text instead of hanging.
 const deeplyNestedQuote = `${'> '.repeat(11)}still finite`;
@@ -124,15 +129,21 @@ const post = fs.readFileSync(
 );
 const notFound = fs.readFileSync(path.join(distDir, '404.html'), 'utf8');
 const themeBootstrapIndex = home.indexOf("localStorage.getItem('theme')");
+const readerBootstrapIndex = home.indexOf("localStorage.getItem('reader-' + setting)");
 const stylesheetIndex = home.indexOf('<link rel="stylesheet" href="/css/style.css">');
 assert.ok(themeBootstrapIndex !== -1 && themeBootstrapIndex < stylesheetIndex,
   'Stored theme must be applied before the stylesheet to prevent a theme flash');
+assert.ok(readerBootstrapIndex !== -1 && readerBootstrapIndex < stylesheetIndex,
+  'Stored reader preferences must be applied before the stylesheet to prevent a typography flash');
 assert.match(home, /<a class="skip-link" href="#main-content">Skip to content<\/a>/);
 assert.match(home, /<main id="main-content">\s*<h1 class="intro">/);
 assert.doesNotMatch(home, /&lt;h1 class=&quot;intro&quot;/);
 assert.match(post, /<span class="reading-time">\d+ min read<\/span>/);
 assert.match(post, /role="progressbar" aria-label="Reading progress"/);
+assert.match(post, /<details class="reader-settings">/);
+assert.match(post, /<details class="post-toc" id="post-toc" hidden>/);
 assert.match(post, /<div class="post-body">\s*<p>/);
+assert.match(post, /<h2 id="section-[a-z0-9-]+">/);
 assert.doesNotMatch(post, /\{\{\{?[\w#/ ]+\}?\}\}/);
 assert.match(notFound, /<a href="\/">Go back to the blog<\/a>/);
 
