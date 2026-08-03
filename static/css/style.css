@@ -25,6 +25,33 @@
   --font-body: 'IBM Plex Serif', Georgia, 'Times New Roman', serif;
   --font-heading: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   --font-mono: 'IBM Plex Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  --reader-font: var(--font-body);
+  --reader-scale: 1;
+  --reader-line-height: 1.7;
+}
+
+:root[data-reader-font="sans"] {
+  --reader-font: var(--font-heading);
+}
+
+:root[data-reader-size="small"] {
+  --reader-scale: 0.9;
+}
+
+:root[data-reader-size="large"] {
+  --reader-scale: 1.12;
+}
+
+:root[data-reader-size="x-large"] {
+  --reader-scale: 1.25;
+}
+
+:root[data-reader-spacing="compact"] {
+  --reader-line-height: 1.55;
+}
+
+:root[data-reader-spacing="relaxed"] {
+  --reader-line-height: 1.9;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -54,6 +81,7 @@ html {
   -webkit-text-size-adjust: 100%;
   scrollbar-width: thin;
   scrollbar-color: var(--border) var(--bg);
+  scroll-behavior: smooth;
 }
 
 ::-webkit-scrollbar {
@@ -306,6 +334,216 @@ main {
   flex-wrap: wrap;
 }
 
+.post-header-details {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.post-header-details .post-meta {
+  flex: 1;
+}
+
+.reader-settings {
+  display: none;
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.js .reader-settings {
+  display: block;
+}
+
+.reader-settings > summary {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  margin-top: -0.3rem;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text);
+  background: transparent;
+  font-family: var(--font-heading);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1;
+  list-style: none;
+  cursor: pointer;
+}
+
+.reader-settings > summary::-webkit-details-marker {
+  display: none;
+}
+
+.reader-settings > summary:hover,
+.reader-settings[open] > summary {
+  color: var(--accent);
+  border-color: var(--muted);
+  background: var(--code-bg);
+}
+
+.reader-settings > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.reader-settings-panel {
+  position: absolute;
+  top: calc(100% + 0.65rem);
+  right: 0;
+  z-index: 50;
+  width: 17.5rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  box-shadow: 0 0.8rem 2rem rgb(0 0 0 / 0.12);
+  font-family: var(--font-heading);
+}
+
+.reader-settings-heading {
+  margin-bottom: 0.9rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.reader-settings fieldset {
+  margin-bottom: 0.9rem;
+  border: 0;
+}
+
+.reader-settings legend {
+  margin-bottom: 0.4rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.reader-size-control,
+.reader-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.35rem;
+}
+
+.reader-size-control {
+  grid-template-columns: 2.4rem 1fr 2.4rem;
+}
+
+.reader-spacing-options {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.reader-settings button,
+.reader-size-control output {
+  min-height: 2.25rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  background: transparent;
+  font: inherit;
+  font-size: 0.72rem;
+}
+
+.reader-settings button {
+  cursor: pointer;
+}
+
+.reader-settings button:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--muted);
+  background: var(--code-bg);
+}
+
+.reader-settings button[aria-pressed="true"] {
+  color: var(--bg);
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.reader-settings button:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.reader-size-control output {
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+
+.reader-settings .reader-reset {
+  width: 100%;
+  min-height: 2rem;
+  border: 0;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 0.16em;
+}
+
+.post-toc {
+  margin: -0.5rem 0 2.25rem;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-family: var(--font-heading);
+  font-size: 0.82rem;
+}
+
+.post-toc > summary {
+  padding: 0.7rem 0.85rem;
+  color: var(--text);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.post-toc > summary span {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.post-toc nav {
+  padding: 0 0.85rem 0.8rem;
+  border-top: 1px solid var(--border);
+}
+
+.post-toc ol {
+  margin: 0;
+  padding: 0.6rem 0 0;
+  list-style: none;
+}
+
+.post-toc li + li {
+  margin-top: 0.35rem;
+}
+
+.post-toc .toc-level-3 {
+  padding-left: 1rem;
+  font-size: 0.94em;
+}
+
+.post-toc a {
+  display: block;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.post-toc a:hover {
+  color: var(--accent);
+}
+
+.post-body {
+  font-family: var(--reader-font);
+  font-size: calc(1rem * var(--reader-scale));
+  line-height: var(--reader-line-height);
+  overflow-wrap: break-word;
+}
+
 .post-meta time {
   font-family: var(--font-mono);
 }
@@ -318,7 +556,7 @@ main {
 .post-body h2 {
   font-family: var(--font-heading);
   font-weight: 600;
-  font-size: 1.3rem;
+  font-size: 1.3em;
   margin: 2rem 0 0.8rem;
   line-height: 1.35;
   letter-spacing: -0.01em;
@@ -328,7 +566,7 @@ main {
 .post-body h3 {
   font-family: var(--font-heading);
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: 1.1em;
   margin: 1.8rem 0 0.6rem;
   line-height: 1.4;
   text-wrap: balance;
@@ -337,12 +575,19 @@ main {
 .post-body h4 {
   font-family: var(--font-heading);
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 1em;
   margin: 1.5rem 0 0.5rem;
 }
 
 .post-body p {
   margin-bottom: 1.5em;
+  text-wrap: pretty;
+}
+
+.post-body h2,
+.post-body h3,
+.post-body h4 {
+  scroll-margin-top: 1rem;
 }
 
 .post-body strong {
@@ -362,7 +607,7 @@ main {
   overflow-x: auto;
   margin-bottom: 1.5em;
   border: 1px solid var(--border);
-  font-size: 0.85rem;
+  font-size: 0.85em;
   line-height: 1.5;
   border-radius: 3px;
   tab-size: 2;
@@ -414,7 +659,7 @@ main {
   border-left: 3px solid var(--accent);
   background: var(--code-bg);
   font-family: var(--font-heading);
-  font-size: 0.9rem;
+  font-size: 0.9em;
   line-height: 1.45;
   text-align: center;
 }
@@ -597,7 +842,9 @@ main {
   .site-header,
   .site-footer,
   .reading-progress,
-  .post-nav {
+  .post-nav,
+  .reader-settings,
+  .post-toc {
     display: none !important;
   }
 
@@ -676,6 +923,21 @@ main {
 
   .post-header h1 {
     font-size: 1.5rem;
+  }
+
+  .reader-settings-panel {
+    right: -0.1rem;
+    width: min(17.5rem, calc(100vw - 2rem));
+  }
+
+  .reader-settings > summary {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .reader-settings button,
+  .reader-size-control output {
+    min-height: 2.75rem;
   }
 
   .post-nav {

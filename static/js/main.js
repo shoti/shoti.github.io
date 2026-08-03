@@ -1,5 +1,20 @@
 'use strict';
 
+const READER_DEFAULTS = Object.freeze({
+  font: 'serif',
+  size: 'medium',
+  spacing: 'comfortable'
+});
+const READER_SIZES = Object.freeze(['small', 'medium', 'large', 'x-large']);
+const READER_SIZE_LABELS = Object.freeze({
+  small: '90%',
+  medium: '100%',
+  large: '112%',
+  'x-large': '125%'
+});
+const READER_FONTS = Object.freeze(['serif', 'sans']);
+const READER_SPACING = Object.freeze(['compact', 'comfortable', 'relaxed']);
+
 function readStoredTheme(getStorage = () => localStorage) {
   try {
     const stored = getStorage().getItem('theme');
@@ -16,6 +31,131 @@ function writeStoredTheme(theme, getStorage = () => localStorage) {
   } catch {
     return false;
   }
+}
+
+function normalizeReaderPreferences(preferences = {}) {
+  return {
+    font: READER_FONTS.includes(preferences.font) ? preferences.font : READER_DEFAULTS.font,
+    size: READER_SIZES.includes(preferences.size) ? preferences.size : READER_DEFAULTS.size,
+    spacing: READER_SPACING.includes(preferences.spacing) ? preferences.spacing : READER_DEFAULTS.spacing
+  };
+}
+
+function readReaderPreferences(getStorage = () => localStorage) {
+  try {
+    const storage = getStorage();
+    return normalizeReaderPreferences({
+      font: storage.getItem('reader-font'),
+      size: storage.getItem('reader-size'),
+      spacing: storage.getItem('reader-spacing')
+    });
+  } catch {
+    return { ...READER_DEFAULTS };
+  }
+}
+
+function writeReaderPreferences(preferences, getStorage = () => localStorage) {
+  const normalized = normalizeReaderPreferences(preferences);
+  try {
+    const storage = getStorage();
+    storage.setItem('reader-font', normalized.font);
+    storage.setItem('reader-size', normalized.size);
+    storage.setItem('reader-spacing', normalized.spacing);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function applyReaderPreferences(root, preferences) {
+  const normalized = normalizeReaderPreferences(preferences);
+  root.dataset.readerFont = normalized.font;
+  root.dataset.readerSize = normalized.size;
+  root.dataset.readerSpacing = normalized.spacing;
+  return normalized;
+}
+
+function stepReaderSize(size, direction) {
+  const currentIndex = READER_SIZES.indexOf(size);
+  const safeIndex = currentIndex === -1 ? READER_SIZES.indexOf(READER_DEFAULTS.size) : currentIndex;
+  const nextIndex = Math.min(READER_SIZES.length - 1, Math.max(0, safeIndex + direction));
+  return READER_SIZES[nextIndex];
+}
+
+function readerControlState(preferences) {
+  const normalized = normalizeReaderPreferences(preferences);
+  const sizeIndex = READER_SIZES.indexOf(normalized.size);
+  return {
+    ...normalized,
+    sizeLabel: READER_SIZE_LABELS[normalized.size],
+    canDecrease: sizeIndex > 0,
+    canIncrease: sizeIndex < READER_SIZES.length - 1
+  };
+}
+
+function slugifyHeading(text) {
+  const slug = String(text)
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || 'section';
+}
+
+function createTableOfContentsEntries(headings) {
+  const counts = new Map();
+  return headings.map(heading => {
+    const base = heading.id || `section-${slugifyHeading(heading.title)}`;
+    const count = (counts.get(base) || 0) + 1;
+    counts.set(base, count);
+    return {
+      id: count === 1 ? base : `${base}-${count}`,
+      level: heading.level === 3 ? 3 : 2,
+      title: String(heading.title).trim()
+    };
+  });
+}
+
+function shouldDismissReaderSettings(readerSettings, target) {
+  return Boolean(readerSettings?.open && !readerSettings.contains(target));
+}
+
+function dismissReaderSettings(readerSettings, restoreFocus = false) {
+  if (!readerSettings?.open) return false;
+  readerSettings.open = false;
+  if (restoreFocus) readerSettings.querySelector('summary')?.focus();
+  return true;
+}
+
+function initializeTableOfContents(container, articleBody) {
+  if (!container || !articleBody) return [];
+  const headings = Array.from(articleBody.querySelectorAll('h2, h3'));
+  if (headings.length < 3) return [];
+
+  const entries = createTableOfContentsEntries(headings.map(heading => ({
+    id: heading.id,
+    level: Number(heading.tagName.slice(1)),
+    title: heading.textContent
+  })));
+  const list = container.querySelector('#post-toc-list');
+  const count = container.querySelector('#post-toc-count');
+  if (!list || !count) return [];
+
+  for (let index = 0; index < entries.length; index++) {
+    const entry = entries[index];
+    headings[index].id = entry.id;
+    const item = document.createElement('li');
+    item.className = `toc-level-${entry.level}`;
+    const link = document.createElement('a');
+    link.href = `#${entry.id}`;
+    link.textContent = entry.title;
+    item.appendChild(link);
+    list.appendChild(item);
+  }
+  count.textContent = `(${entries.length})`;
+  container.hidden = false;
+  return entries;
 }
 
 function resolveTheme(explicitTheme, prefersDark) {
@@ -108,6 +248,71 @@ if (typeof document !== 'undefined') {
       toggle.style.transform = `rotate(${rotation}deg)`;
     });
 
+    // Reader preferences
+    let readerPreferences = applyReaderPreferences(root, readReaderPreferences());
+    const sizeOutput = document.getElementById('reader-size-value');
+    const sizeButtons = Array.from(document.querySelectorAll('[data-reader-size-step]'));
+    const fontButtons = Array.from(document.querySelectorAll('[data-reader-font]'));
+    const spacingButtons = Array.from(document.querySelectorAll('[data-reader-spacing]'));
+
+    const syncReaderControls = () => {
+      const state = readerControlState(readerPreferences);
+      if (sizeOutput) sizeOutput.textContent = state.sizeLabel;
+      for (const button of sizeButtons) {
+        const direction = Number(button.dataset.readerSizeStep);
+        button.disabled = direction < 0 ? !state.canDecrease : !state.canIncrease;
+      }
+      for (const button of fontButtons) {
+        button.setAttribute('aria-pressed', String(button.dataset.readerFont === state.font));
+      }
+      for (const button of spacingButtons) {
+        button.setAttribute('aria-pressed', String(button.dataset.readerSpacing === state.spacing));
+      }
+    };
+
+    const updateReaderPreferences = nextPreferences => {
+      readerPreferences = applyReaderPreferences(root, nextPreferences);
+      writeReaderPreferences(readerPreferences);
+      syncReaderControls();
+    };
+
+    for (const button of sizeButtons) {
+      button.addEventListener('click', () => updateReaderPreferences({
+        ...readerPreferences,
+        size: stepReaderSize(readerPreferences.size, Number(button.dataset.readerSizeStep))
+      }));
+    }
+    for (const button of fontButtons) {
+      button.addEventListener('click', () => updateReaderPreferences({
+        ...readerPreferences,
+        font: button.dataset.readerFont
+      }));
+    }
+    for (const button of spacingButtons) {
+      button.addEventListener('click', () => updateReaderPreferences({
+        ...readerPreferences,
+        spacing: button.dataset.readerSpacing
+      }));
+    }
+    document.getElementById('reader-reset')?.addEventListener('click', () => {
+      updateReaderPreferences(READER_DEFAULTS);
+    });
+    const readerSettings = document.querySelector('.reader-settings');
+    document.addEventListener('click', event => {
+      if (shouldDismissReaderSettings(readerSettings, event.target)) dismissReaderSettings(readerSettings);
+    });
+    readerSettings?.addEventListener('keydown', event => {
+      if (event.key !== 'Escape') return;
+      dismissReaderSettings(readerSettings, true);
+    });
+    syncReaderControls();
+
+    // Article outline
+    initializeTableOfContents(
+      document.getElementById('post-toc'),
+      document.querySelector('.post-body')
+    );
+
     // Active nav link
     const { pathname } = location;
     for (const link of document.querySelectorAll('.site-nav a')) {
@@ -139,14 +344,25 @@ if (typeof document !== 'undefined') {
 
 if (typeof module !== 'undefined') {
   module.exports = {
+    applyReaderPreferences,
     calculateReadingProgress,
+    createTableOfContentsEntries,
     createFrameScheduler,
+    dismissReaderSettings,
+    initializeTableOfContents,
     isNavActive,
+    normalizeReaderPreferences,
+    readReaderPreferences,
     readStoredTheme,
+    readerControlState,
     resolveTheme,
+    shouldDismissReaderSettings,
+    slugifyHeading,
+    stepReaderSize,
     subscribeToMediaChanges,
     themeControlState,
     updateReadingProgressBar,
+    writeReaderPreferences,
     writeStoredTheme
   };
 }
