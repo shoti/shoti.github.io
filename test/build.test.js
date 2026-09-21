@@ -11,6 +11,7 @@ const {
   loadPosts,
   parseMarkdown,
   render,
+  renderNewsOrientationBanner,
   serializeJsonForHtml,
   validatePost
 } = require('../build');
@@ -53,6 +54,20 @@ assert.strictEqual(
 assert.strictEqual(render('<h1>{{title}}</h1>', { title: '<unsafe>' }), '<h1>&lt;unsafe&gt;</h1>');
 assert.strictEqual(render('<main>{{{content}}}</main>', { content: '<p>trusted</p>' }), '<main><p>trusted</p></main>');
 assert.throws(() => render('{{#if enabled}}broken', { enabled: true }), /Unclosed/);
+
+// Orientation banners keep an older edition or revision from being mistaken for today's news.
+const archivedBanner = renderNewsOrientationBanner('archived', { dateFormatted: '20 <script> სექტემბერი, 2026' });
+assert.match(archivedBanner, /20 &lt;script&gt; სექტემბერი, 2026/);
+assert.match(archivedBanner, /<a href="\/news\/">დღევანდელი გამოშვების ნახვა/);
+const revisionBanner = renderNewsOrientationBanner('revision', {
+  dateFormatted: '20 სექტემბერი, 2026',
+  editionDate: '2026-09-20',
+  revision: 1,
+  revisionCount: 2
+});
+assert.match(revisionBanner, /რედაქცია 1-ს \(სულ 2\)/);
+assert.match(revisionBanner, /<a href="\/news\/2026-09-20\/">მიმდინარე რედაქციის ნახვა/);
+assert.strictEqual(renderNewsOrientationBanner(null, {}), '');
 
 const validPost = {
   title: 'A valid post',
@@ -158,20 +173,42 @@ assert.match(news, /<meta property="og:image:type" content="image\/jpeg">/);
 assert.match(news, /<meta property="og:image:width" content="1200">/);
 assert.match(news, /<meta property="og:image:height" content="630">/);
 assert.match(news, /<meta name="twitter:image" content="https:\/\/shoti\.github\.io\/images\/news-social\.jpg">/);
-assert.match(news, /<nav class="site-nav" aria-label="Primary">/);
-assert.match(news, /<a href="\/">Blog<\/a>/);
-assert.match(news, /<a href="\/news\/">News<\/a>/);
-assert.match(news, /<a href="\/archive\/">Archive<\/a>/);
-assert.match(news, /<a href="\/about\/">About<\/a>/);
+// News pages drop the shared blog header/nav entirely and get their own minimal chrome.
+assert.doesNotMatch(news, /<header class="site-header">/);
+assert.doesNotMatch(news, /<nav class="site-nav"/);
+assert.match(news, /<div class="news-chrome">/);
+assert.match(news, /<a class="news-chrome-home" href="\/news\/">/);
+assert.match(news, /<a class="news-chrome-archive" href="\/news\/archive\/">/);
+// News is dark-only — no theme toggle, no light-mode branching.
+assert.doesNotMatch(news, /id="theme-toggle"/);
 assert.match(news, /github\.com\/shoti\/shoti\.github\.io">Source<\/a>/);
+assert.match(news, /<p>© 2026 Shota Mtvarelishvili · <a href="mailto:mtvarelishvili@proton\.me">mtvarelishvili@proton\.me<\/a> · <a href="https:\/\/github\.com\/shoti\/shoti\.github\.io">Source<\/a><\/p>/);
 if (newsIndex.latest === null) {
   assert.match(news, /პირველი მიმოხილვა ჯერ მზად არ არის/);
 } else {
   assert.match(news, new RegExp(`<h1><time datetime="${newsIndex.latest.edition_date}">[^<]+<\\/time><\\/h1>`));
   assert.match(news, /<p class="news-latest-note">განახლება: /);
+  assert.match(news, /<span class="news-issue">#\d+<\/span>/);
   assert.doesNotMatch(news, /რაც დღეს უნდა იცოდეთ|ბოლო გამოშვება/);
+  assert.match(news, /role="progressbar" aria-label="Reading progress"/);
+  const latestBriefing = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'news', newsIndex.latest.path), 'utf8'));
+  if (latestBriefing.stories.length > 1) {
+    assert.match(news, /<nav class="news-rail" aria-label="ამბების სია">/);
+    assert.match(news, /<p class="news-shortcuts-hint">/);
+    assert.match(news, /<a class="news-story-nav-next" href="#/);
+  }
 }
 assert.match(newsArchive, /<link rel="canonical" href="https:\/\/shoti\.github\.io\/news\/archive\/">/);
+assert.doesNotMatch(newsArchive, /<header class="site-header">/);
+assert.match(newsArchive, /<div class="news-chrome">/);
+// The rest of the site keeps its shared header and navigation untouched.
+assert.match(home, /<header class="site-header">/);
+assert.match(home, /<nav class="site-nav" aria-label="Primary">/);
+assert.match(home, /<a href="\/">Blog<\/a>/);
+assert.match(home, /<a href="\/news\/">News<\/a>/);
+assert.match(home, /<a href="\/archive\/">Archive<\/a>/);
+assert.match(home, /<a href="\/about\/">About<\/a>/);
+assert.match(home, /<button id="theme-toggle" class="theme-toggle"/);
 assert.ok(fs.existsSync(path.join(distDir, 'news', 'schema', 'briefing-1.0.json')));
 
 console.log('Build tests passed');

@@ -46,13 +46,14 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&amp;family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400;1,600&amp;family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400;1,600&amp;family=Noto+Sans+Georgian:wght@400;500;600;700&amp;family=Noto+Serif+Georgian:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&amp;family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400;1,600&amp;family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400;1,600&amp;family=Noto+Sans+Georgian:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
   {{{head}}}
 </head>
 <body class="{{bodyClass}}">
   <a class="skip-link" href="#main-content">{{skipLabel}}</a>
   {{#if readingProgress}}<div class="reading-progress" id="reading-progress" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>{{/if}}
+  {{#if showSiteHeader}}
   <header class="site-header">
     <div class="header-inner">
       <div class="header-title">
@@ -69,6 +70,13 @@
       </nav>
     </div>
   </header>
+  {{/if}}
+  {{#if newsChrome}}
+  <div class="news-chrome">
+    <a class="news-chrome-home" href="/news/">[დღის ამბები]</a>
+    <a class="news-chrome-archive" href="/news/archive/">[არქივი]</a>
+  </div>
+  {{/if}}
   <main id="main-content">
     {{{content}}}
   </main>

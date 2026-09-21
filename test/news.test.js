@@ -448,7 +448,8 @@ try {
   assert.match(latest, /თუ მხოლოდ ერთი წუთი გაქვთ/);
   assert.match(latest, /მნიშვნელოვანი ამბავი/);
   assert.match(latest, /href="#fictional-public-service-update"/);
-  assert.match(latest, /სარჩევში დაბრუნება/);
+  assert.match(latest, /<a class="news-story-nav-contents" href="#news-contents-title">\[სარჩევი\]<\/a>/);
+  assert.doesNotMatch(latest, /class="news-rail"/);
   assert.match(latest, /https:\/\/example\.com\/fictional-news-fixture/);
   assert.doesNotMatch(latest, /&lt;article class=&quot;news-story&quot;/);
   assert.match(dated, /<link rel="canonical" href="https:\/\/shoti\.github\.io\/news\/2026-09-20\/">/);

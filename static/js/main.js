@@ -217,6 +217,30 @@ function createFrameScheduler(callback, scheduleFrame = requestAnimationFrame) {
   };
 }
 
+// Reading position among a list of story tops (each element's distance from the viewport top).
+// The active story is the last one whose top has reached or passed the threshold.
+function findActiveStoryIndex(tops, thresholdOffset = 96) {
+  let index = 0;
+  for (let i = 0; i < tops.length; i++) {
+    if (tops[i] <= thresholdOffset) index = i;
+    else break;
+  }
+  return index;
+}
+
+function adjacentStoryIndex(currentIndex, direction, length) {
+  if (length <= 0) return -1;
+  const base = currentIndex === -1 ? (direction > 0 ? -1 : 0) : currentIndex;
+  return Math.min(length - 1, Math.max(0, base + direction));
+}
+
+// Among intersection entries, the "active" story is the topmost one still on screen.
+function pickClosestIntersecting(entries) {
+  const visible = entries.filter(entry => entry.isIntersecting);
+  if (!visible.length) return null;
+  return visible.reduce((a, b) => (a.top <= b.top ? a : b)).id;
+}
+
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', () => {
     const root = document.documentElement;
@@ -329,7 +353,7 @@ if (typeof document !== 'undefined') {
     // Reading progress bar
     const bar = document.getElementById('reading-progress');
     if (bar) {
-      const article = document.querySelector('.post');
+      const article = document.querySelector('.post, .news-briefing');
       const updateReadingProgress = () => updateReadingProgressBar(
         bar,
         article,
@@ -342,19 +366,84 @@ if (typeof document !== 'undefined') {
       window.addEventListener('resize', updateReadingProgress);
       updateReadingProgress();
     }
+
+    // News: story rail + contents scrollspy, and j/k reading shortcuts
+    const newsStories = Array.from(document.querySelectorAll('.news-story'));
+    if (newsStories.length > 1) {
+      const railLinks = new Map(Array.from(document.querySelectorAll('.news-rail a'))
+        .map(link => [link.getAttribute('href').slice(1), link]));
+      const contentsLinks = new Map(Array.from(document.querySelectorAll('.news-contents a'))
+        .map(link => [link.getAttribute('href').slice(1), link]));
+
+      const reducedMotion = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : null;
+      let activeStoryId = null;
+      // The index a keyboard jump last targeted, kept independent of scroll-in-flight
+      // geometry so repeated j/k presses always advance one story at a time instead of
+      // re-reading a position that hasn't finished animating yet.
+      let targetIndex = -1;
+      const setActiveStory = id => {
+        if (id === activeStoryId) return;
+        if (activeStoryId) {
+          railLinks.get(activeStoryId)?.removeAttribute('aria-current');
+          contentsLinks.get(activeStoryId)?.removeAttribute('aria-current');
+        }
+        activeStoryId = id;
+        targetIndex = newsStories.findIndex(story => story.id === id);
+        railLinks.get(id)?.setAttribute('aria-current', 'true');
+        contentsLinks.get(id)?.setAttribute('aria-current', 'true');
+      };
+
+      if (typeof IntersectionObserver === 'function') {
+        const observer = new IntersectionObserver(entries => {
+          const id = pickClosestIntersecting(entries.map(entry => ({
+            id: entry.target.id,
+            top: entry.boundingClientRect.top,
+            isIntersecting: entry.isIntersecting
+          })));
+          if (id) setActiveStory(id);
+        }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+        for (const story of newsStories) observer.observe(story);
+      }
+
+      document.addEventListener('keydown', event => {
+        if (event.metaKey || event.ctrlKey || event.altKey || event.repeat) return;
+        if (event.key !== 'j' && event.key !== 'k') return;
+        const target = event.target;
+        if (target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) return;
+        if (targetIndex === -1) {
+          const tops = newsStories.map(story => story.getBoundingClientRect().top);
+          targetIndex = findActiveStoryIndex(tops);
+        }
+        const nextIndex = adjacentStoryIndex(targetIndex, event.key === 'j' ? 1 : -1, newsStories.length);
+        const nextStory = newsStories[nextIndex];
+        if (!nextStory) return;
+        event.preventDefault();
+        targetIndex = nextIndex;
+        setActiveStory(nextStory.id);
+        nextStory.scrollIntoView({ behavior: reducedMotion?.matches ? 'auto' : 'smooth', block: 'start' });
+        const heading = nextStory.querySelector('h2');
+        if (heading) {
+          heading.setAttribute('tabindex', '-1');
+          heading.focus({ preventScroll: true });
+        }
+      });
+    }
   });
 }
 
 if (typeof module !== 'undefined') {
   module.exports = {
+    adjacentStoryIndex,
     applyReaderPreferences,
     calculateReadingProgress,
     createTableOfContentsEntries,
     createFrameScheduler,
     dismissReaderSettings,
+    findActiveStoryIndex,
     initializeTableOfContents,
     isNavActive,
     normalizeReaderPreferences,
+    pickClosestIntersecting,
     readReaderPreferences,
     readStoredTheme,
     readerControlState,

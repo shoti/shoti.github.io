@@ -570,7 +570,9 @@ function wrapInBase(content, data) {
     archiveLabel: 'Archive',
     aboutLabel: 'About',
     themeLabel: 'Switch to dark mode',
-    sourceLabel: 'Source'
+    sourceLabel: 'Source',
+    showSiteHeader: true,
+    newsChrome: false
   }, data));
 }
 
@@ -622,31 +624,46 @@ function renderNewsSources(story) {
 function renderNewsNavigation(briefing) {
   return briefing.stories.map(story =>
     '<li><a href="#' + escapeHtml(story.id) + '">' +
-    '<span class="news-contents-number">' + story.importance + '</span>' +
+    '<span class="news-contents-number">[' + story.importance + ']</span>' +
     '<span><strong>' + escapeHtml(story.headline) + '</strong>' +
     '<small>' + escapeHtml(newsCategoryLabel(story.category)) + '</small></span>' +
     '</a></li>'
   ).join('');
 }
 
+function renderNewsStoryNav(briefing, index) {
+  const prevStory = index > 0 ? briefing.stories[index - 1] : null;
+  const nextStory = index < briefing.stories.length - 1 ? briefing.stories[index + 1] : null;
+  const prevLink = prevStory
+    ? '<a class="news-story-nav-prev" href="#' + escapeHtml(prevStory.id) + '" title="' + escapeHtml(prevStory.headline) +
+      '">[<span aria-hidden="true">←</span> წინა ამბავი]</a>'
+    : '<span class="news-story-nav-spacer" aria-hidden="true"></span>';
+  const nextLink = nextStory
+    ? '<a class="news-story-nav-next" href="#' + escapeHtml(nextStory.id) + '" title="' + escapeHtml(nextStory.headline) +
+      '">[შემდეგი ამბავი <span aria-hidden="true">→</span>]</a>'
+    : '<span class="news-story-nav-spacer" aria-hidden="true"></span>';
+  return '<nav class="news-story-nav" aria-label="ამბებს შორის ნავიგაცია">' + prevLink +
+    '<a class="news-story-nav-contents" href="#news-contents-title">[სარჩევი]</a>' + nextLink + '</nav>';
+}
+
 function renderNewsStories(briefing) {
-  return briefing.stories.map(story => {
+  return briefing.stories.map((story, index) => {
     const eventTime = story.event_at
       ? '<p class="news-event-time">მოვლენის დრო: <time datetime="' + escapeHtml(story.event_at) + '">' +
         escapeHtml(formatGeorgianTimestamp(story.event_at)) + '</time></p>'
       : '';
     const uncertainty = story.uncertainty
-      ? '<div class="news-uncertainty"><h3>რა რჩება დასაზუსტებელი</h3><p>' + escapeHtml(story.uncertainty) + '</p></div>'
+      ? '<div class="news-uncertainty"><h3>&gt; რა რჩება დასაზუსტებელი</h3><p>' + escapeHtml(story.uncertainty) + '</p></div>'
       : '';
     return '<article class="news-story" id="' + escapeHtml(story.id) + '">' +
-      '<header><div class="news-story-label"><span>' + story.importance + '</span>' +
+      '<header><div class="news-story-label"><span>[' + story.importance + ']</span>' +
       escapeHtml(newsCategoryLabel(story.category)) + '</div>' +
       '<h2>' + escapeHtml(story.headline) + '</h2>' + eventTime + '</header>' +
       '<div class="news-story-copy"><p>' + escapeHtml(story.summary) + '</p>' +
-      '<div class="news-why"><h3>რატომ უნდა მიაქციოთ ყურადღება</h3><p>' + escapeHtml(story.why_it_matters) + '</p></div>' +
+      '<div class="news-why"><h3>&gt; რატომ უნდა მიაქციოთ ყურადღება</h3><p>' + escapeHtml(story.why_it_matters) + '</p></div>' +
       uncertainty + '</div>' +
-      '<div class="news-sources"><h3>წყაროები</h3><ol>' + renderNewsSources(story) + '</ol></div>' +
-      '<a class="news-back-link" href="#news-contents-title">სარჩევში დაბრუნება <span aria-hidden="true">↑</span></a>' +
+      '<div class="news-sources"><h3>&gt; წყაროები</h3><ol>' + renderNewsSources(story) + '</ol></div>' +
+      renderNewsStoryNav(briefing, index) +
       '</article>';
   }).join('');
 }
@@ -694,6 +711,19 @@ function validateNewsIndexRecords(newsIndex) {
   return editions;
 }
 
+function renderNewsOrientationBanner(kind, context) {
+  if (kind === 'archived') {
+    return '<p class="news-orientation-banner">! ეს <strong>' + escapeHtml(context.dateFormatted) +
+      '</strong> გამოშვებაა. <a href="/news/">დღევანდელი გამოშვების ნახვა →</a></p>';
+  }
+  if (kind === 'revision') {
+    return '<p class="news-orientation-banner">! თქვენ ათვალიერებთ <strong>' + escapeHtml(context.dateFormatted) +
+      '</strong> გამოშვების რედაქცია ' + context.revision + '-ს (სულ ' + context.revisionCount + '). ' +
+      '<a href="/news/' + escapeHtml(context.editionDate) + '/">მიმდინარე რედაქციის ნახვა →</a></p>';
+  }
+  return '';
+}
+
 function renderNewsBriefingPage(briefing, edition, options = {}) {
   const revisionHistory = edition.revisions.length > 1;
   const revisionHistoryHtml = edition.revisions.map(record => {
@@ -703,13 +733,24 @@ function renderNewsBriefingPage(briefing, edition, options = {}) {
       escapeHtml(formatGeorgianTimestamp(record.generated_at)) + '</time></li>';
   }).join('');
   const editionJsonUrl = `/news/data/${briefing.edition_date}/r${briefing.revision}.json`;
+  const orientationBannerHtml = options.orientationBanner
+    ? renderNewsOrientationBanner(options.orientationBanner, {
+      dateFormatted: formatGeorgianDate(briefing.edition_date),
+      editionDate: briefing.edition_date,
+      revision: briefing.revision,
+      revisionCount: edition.revisions.length
+    })
+    : '';
   return render(newsTemplate, {
     editionHeading: formatGeorgianDate(briefing.edition_date),
     editionDate: briefing.edition_date,
+    editionNumber: options.editionNumber,
     coverageFormatted: `პერიოდი: ${formatCoverage(briefing.coverage)}`,
     generatedFormatted: formatGeorgianTimestamp(briefing.generated_at),
     readingTime: Math.max(1, Math.round(newsWordCount(briefing) / 180)),
     isLatest: Boolean(options.isLatest),
+    hasOrientationBanner: Boolean(orientationBannerHtml),
+    orientationBannerHtml,
     introduction: briefing.introduction,
     takeawaysHtml: briefing.takeaways.map(item => '<li>' + escapeHtml(item) + '</li>').join(''),
     storiesNavHtml: renderNewsNavigation(briefing),
@@ -719,7 +760,13 @@ function renderNewsBriefingPage(briefing, edition, options = {}) {
     editionJsonUrl,
     revisionHistory,
     revisionCount: edition.revisions.length,
-    revisionHistoryHtml
+    revisionHistoryHtml,
+    hasStoryRail: briefing.stories.length > 1,
+    railStories: briefing.stories.map(story => ({
+      id: story.id,
+      importance: story.importance,
+      headline: story.headline
+    }))
   });
 }
 
@@ -739,10 +786,13 @@ function newsBaseData(briefing, canonical, options = {}) {
     ogImageWidth: 1200,
     ogImageHeight: 630,
     head: options.head || '',
-    readingProgress: false,
+    readingProgress: Boolean(briefing),
     lang: 'ka',
     ogLocale: 'ka_GE',
-    bodyClass: 'news-page'
+    bodyClass: 'news-page',
+    showSiteHeader: false,
+    newsChrome: true,
+    skipLabel: 'შემცველობაზე გადასვლა'
   };
 }
 
@@ -890,13 +940,20 @@ writeFile(path.join(DIST_DIR, 'news', 'schema', 'briefing-1.0.json'),
   fs.readFileSync(path.join(NEWS_DIR, 'schema', 'briefing.schema.json'), 'utf8'));
 writeFile(path.join(DIST_DIR, 'news', 'feed.json'), serializeJsonForHtml(newsIndex) + '\n');
 
-for (const edition of newsEditions) {
+for (const [editionIndex, edition] of newsEditions.entries()) {
+  const editionNumber = newsEditions.length - editionIndex;
+  const isLatestEdition = newsIndex.latest.edition_date === edition.edition_date;
+
   for (const record of edition.revisions) {
     writeFile(
       path.join(DIST_DIR, 'news', 'data', edition.edition_date, `r${record.revision}.json`),
       JSON.stringify(record.briefing, null, 2) + '\n'
     );
-    const revisionContent = renderNewsBriefingPage(record.briefing, edition, { isLatest: false });
+    const revisionContent = renderNewsBriefingPage(record.briefing, edition, {
+      isLatest: false,
+      editionNumber,
+      orientationBanner: 'revision'
+    });
     const revisionPage = wrapInBase(revisionContent, newsBaseData(
       record.briefing,
       `${BASE_URL}/news/${edition.edition_date}/revisions/${record.revision}/`
@@ -909,7 +966,9 @@ for (const edition of newsEditions) {
 
   const latestRevision = edition.revisions.find(record => record.revision === edition.latest_revision);
   const datedContent = renderNewsBriefingPage(latestRevision.briefing, edition, {
-    isLatest: newsIndex.latest.edition_date === edition.edition_date
+    isLatest: isLatestEdition,
+    editionNumber,
+    orientationBanner: isLatestEdition ? null : 'archived'
   });
   const newsArticleSchema = serializeJsonForHtml({
     '@context': 'https://schema.org',
@@ -933,21 +992,29 @@ let latestNewsPage;
 if (newsEditions.length) {
   const latestEdition = newsEditions[0];
   const latestRevision = latestEdition.revisions.find(record => record.revision === latestEdition.latest_revision);
-  const latestContent = renderNewsBriefingPage(latestRevision.briefing, latestEdition, { isLatest: true });
+  const latestContent = renderNewsBriefingPage(latestRevision.briefing, latestEdition, {
+    isLatest: true,
+    editionNumber: newsEditions.length,
+    orientationBanner: null
+  });
   latestNewsPage = wrapInBase(latestContent, newsBaseData(latestRevision.briefing, `${BASE_URL}/news/`));
 } else {
   latestNewsPage = wrapInBase(newsEmptyTemplate, newsBaseData(null, `${BASE_URL}/news/`));
 }
 writeFile(path.join(DIST_DIR, 'news', 'index.html'), latestNewsPage);
 
-const newsArchiveItems = newsEditions.map(edition => {
+const newsArchiveItems = newsEditions.map((edition, index) => {
   const latestRevision = edition.revisions.find(record => record.revision === edition.latest_revision);
   const revisionLabel = edition.latest_revision > 1 ? ` · რედაქცია ${edition.latest_revision}` : '';
-  return '<li><a href="/news/' + edition.edition_date + '/"><time datetime="' + edition.edition_date + '">' +
-    escapeHtml(formatGeorgianDate(edition.edition_date)) + '</time><span>' +
-    escapeHtml(latestRevision.briefing.introduction) + '</span><small>' +
+  const editionNumber = newsEditions.length - index;
+  const currentLabel = newsIndex.latest.edition_date === edition.edition_date ? ' · დღევანდელი' : '';
+  return '<li><a href="/news/' + edition.edition_date + '/">' +
+    '<span class="news-archive-number">#' + editionNumber + '</span>' +
+    '<time datetime="' + edition.edition_date + '">' +
+    escapeHtml(formatGeorgianDate(edition.edition_date)) + '</time>' +
+    '<span class="news-archive-intro">' + escapeHtml(latestRevision.briefing.introduction) + '</span><small>' +
     latestRevision.briefing.stories.length + ' ამბავი · დაახლოებით ' +
-    Math.max(1, Math.round(newsWordCount(latestRevision.briefing) / 180)) + ' წუთი' + revisionLabel +
+    Math.max(1, Math.round(newsWordCount(latestRevision.briefing) / 180)) + ' წუთი' + revisionLabel + currentLabel +
     '</small></a></li>';
 }).join('');
 const newsArchiveContent = render(newsArchiveTemplate, {
@@ -1054,6 +1121,7 @@ module.exports = {
   loadPosts,
   parseMarkdown,
   render,
+  renderNewsOrientationBanner,
   serializeJsonForHtml,
   validatePost
 };

@@ -1,18 +1,29 @@
 <article class="news-briefing" id="briefing-start">
   <header class="news-masthead">
-    <div class="news-kicker">დღის ამბები</div>
+    <div class="news-masthead-top">
+      <span class="news-kicker"># დღის ამბები</span>
+      <span class="news-issue">#{{editionNumber}}</span>
+    </div>
     <h1><time datetime="{{editionDate}}">{{editionHeading}}</time></h1>
+    <p class="news-path">/news/{{editionDate}}/</p>
     <div class="news-edition-meta">
       <span>{{coverageFormatted}}</span>
       <span>დაახლოებით {{readingTime}} წუთი</span>
     </div>
     {{#if isLatest}}<p class="news-latest-note">განახლება: {{generatedFormatted}}</p>{{/if}}
+    {{#if hasOrientationBanner}}{{{orientationBannerHtml}}}{{/if}}
     <nav class="news-reading-paths" aria-label="როგორ წავიკითხოთ">
       <a href="#news-overview-title"><strong>1 წუთი</strong><span>მხოლოდ მთავარი</span></a>
       <a href="#news-stories-title"><strong>{{readingTime}} წუთი</strong><span>სრული მიმოხილვა</span></a>
       <a href="/news/archive/"><strong>არქივი</strong><span>წინა დღეები</span></a>
     </nav>
   </header>
+
+  {{#if hasStoryRail}}
+  <nav class="news-rail" aria-label="ამბების სია">
+    <ol>{{#each railStories}}<li><a href="#{{id}}" title="{{headline}}"><span class="news-rail-dot">[{{importance}}]</span></a></li>{{/each}}</ol>
+  </nav>
+  {{/if}}
 
   <section class="news-overview" aria-labelledby="news-overview-title">
     <div class="news-section-label">თუ მხოლოდ ერთი წუთი გაქვთ</div>
@@ -27,6 +38,7 @@
     <div class="news-section-label">{{storyCount}} შერჩეული ამბავი</div>
     <h2 id="news-contents-title">ამ გამოშვებაში</h2>
     <ol>{{{storiesNavHtml}}}</ol>
+    {{#if hasStoryRail}}<p class="news-shortcuts-hint"><kbd>j</kbd> შემდეგი <kbd>k</kbd> წინა ამბავი</p>{{/if}}
   </nav>
 
   <section class="news-stories" aria-labelledby="news-stories-title">
@@ -36,7 +48,7 @@
 
   {{#if coverageNote}}
   <aside class="news-coverage-note" aria-label="რა ვერ მოვიცავით სრულად">
-    <strong>რა ვერ მოვიცავით სრულად</strong>
+    <strong>! რა ვერ მოვიცავით სრულად</strong>
     <p>{{coverageNote}}</p>
   </aside>
   {{/if}}
@@ -44,8 +56,8 @@
   <footer class="news-disclosure">
     <p>მიმოხილვა წყაროებზე დაყრდნობით, AI-ის დახმარებით მომზადდა და ტექნიკური შემოწმება გაიარა. ყველა ამბავს ახლავს პირდაპირი ბმული, რათა მნიშვნელოვანი დეტალები თავადაც გადაამოწმოთ.</p>
     <nav aria-label="დამატებითი ბმულები">
-      <a href="/news/archive/">წინა გამოშვებები</a>
-      <a href="{{editionJsonUrl}}">მონაცემები JSON-ად</a>
+      <a href="/news/archive/">[წინა გამოშვებები]</a>
+      <a href="{{editionJsonUrl}}">[მონაცემები JSON-ად]</a>
     </nav>
   </footer>
 
