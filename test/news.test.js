@@ -14,7 +14,12 @@ const {
   validateBriefing
 } = require('../lib/news');
 const { closeIssues } = require('../scripts/close-news-issues');
-const { collectIssues, filterImportable } = require('../scripts/collect-news-issues');
+const {
+  MAX_QUEUED_ISSUES,
+  boundedImportableIssues,
+  collectIssues,
+  filterImportable
+} = require('../scripts/collect-news-issues');
 const { authorizeIssueEvent, extractPayload } = require('../scripts/extract-news-issue');
 const { publishBriefing, publishBriefings } = require('../scripts/publish-news');
 const { payloadDigest, recordAuthorization } = require('../scripts/record-news-authorization');
@@ -280,6 +285,79 @@ try {
   assert.deepStrictEqual(isolated.map(item => item.number), [30, 32]);
 } finally {
   fs.rmSync(queueIsolationRoot, { recursive: true, force: true });
+}
+
+const staleQueueRoot = makeRoot('news-stale-queue-test-');
+try {
+  applyImportPlan(planImport(staleQueueRoot, structuredClone(fixture)));
+  const staleIssues = Array.from({ length: MAX_QUEUED_ISSUES }, (_, index) => {
+    const collision = structuredClone(fixture);
+    collision.introduction += ` განსხვავებული შინაარსი ${index}.`;
+    return {
+      number: 100 + index,
+      title: `[news] stale collision ${index}`,
+      body: JSON.stringify(collision),
+      user: { login: 'connected-news-bot[bot]' }
+    };
+  });
+  const next = structuredClone(fixture);
+  next.edition_date = '2026-09-21';
+  next.briefing_id = 'example-2026-09-21-evening';
+  next.generated_at = '2026-09-21T20:12:00+04:00';
+  next.coverage = { start: fixture.coverage.end, end: '2026-09-21T20:00:00+04:00' };
+  staleIssues.push({
+    number: 200,
+    title: '[news] 2026-09-21 r1',
+    body: JSON.stringify(next),
+    user: { login: 'connected-news-bot[bot]' }
+  });
+  const staleComments = staleIssues.map(issue => ({
+    user: { login: 'github-actions[bot]' },
+    issue_url: `https://api.github.com/repos/shoti/shoti.github.io/issues/${issue.number}`,
+    body: `<!-- news-payload-authorization sha256=${payloadDigest(issue.body)} -->`
+  }));
+  const originalWarn = console.warn;
+  console.warn = () => {};
+  let recovered;
+  try {
+    recovered = boundedImportableIssues(
+      collectIssues(staleIssues, staleComments, 'connected-news-bot[bot]'),
+      staleQueueRoot
+    );
+  } finally {
+    console.warn = originalWarn;
+  }
+  assert.deepStrictEqual(recovered.map(item => item.number), [200]);
+} finally {
+  fs.rmSync(staleQueueRoot, { recursive: true, force: true });
+}
+
+const boundedQueueRoot = makeRoot('news-bounded-queue-test-');
+try {
+  const importable = Array.from({ length: MAX_QUEUED_ISSUES + 1 }, (_, index) => {
+    const payload = structuredClone(fixture);
+    const date = new Date(Date.UTC(2026, 0, index + 1)).toISOString().slice(0, 10);
+    payload.edition_date = date;
+    payload.briefing_id = `${date}-evening`;
+    payload.generated_at = `${date}T20:00:00+04:00`;
+    payload.coverage = {
+      start: `${date}T18:00:00+04:00`,
+      end: `${date}T19:59:00+04:00`
+    };
+    return { number: 300 + index, payload };
+  });
+  const originalWarn = console.warn;
+  console.warn = () => {};
+  try {
+    assert.throws(
+      () => boundedImportableIssues(importable, boundedQueueRoot),
+      /Refusing to process more than 50 importable news issues/
+    );
+  } finally {
+    console.warn = originalWarn;
+  }
+} finally {
+  fs.rmSync(boundedQueueRoot, { recursive: true, force: true });
 }
 
 const batchRollbackRoot = makeRoot('news-batch-rollback-test-');

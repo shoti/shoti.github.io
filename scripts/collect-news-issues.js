@@ -42,9 +42,6 @@ function collectIssues(apiResponse, commentsResponse, allowedValue) {
     allowed.has(issue.user.login.toLowerCase()) && typeof issue.body === 'string' &&
     receipts.get(issue.number)?.has(payloadDigest(issue.body))
   );
-  if (candidates.length > MAX_QUEUED_ISSUES) {
-    throw new Error(`Refusing to process more than ${MAX_QUEUED_ISSUES} queued news issues`);
-  }
   const valid = [];
   for (const issue of candidates) {
     try {
@@ -86,6 +83,14 @@ function filterImportable(issues, rootDir) {
   return accepted;
 }
 
+function boundedImportableIssues(issues, rootDir, limit = MAX_QUEUED_ISSUES) {
+  const importable = filterImportable(issues, rootDir);
+  if (importable.length > limit) {
+    throw new Error(`Refusing to process more than ${limit} importable news issues`);
+  }
+  return importable;
+}
+
 function run(inputPath, commentsPath, outputDir, allowedValue = process.env.NEWS_ALLOWED_SENDERS,
   rootDir = path.join(__dirname, '..'), allowEmpty = false) {
   if (!inputPath || !commentsPath || !outputDir) {
@@ -93,7 +98,7 @@ function run(inputPath, commentsPath, outputDir, allowedValue = process.env.NEWS
   }
   const response = JSON.parse(fs.readFileSync(path.resolve(inputPath), 'utf8'));
   const comments = JSON.parse(fs.readFileSync(path.resolve(commentsPath), 'utf8'));
-  const issues = filterImportable(collectIssues(response, comments, allowedValue), rootDir);
+  const issues = boundedImportableIssues(collectIssues(response, comments, allowedValue), rootDir);
   if (!issues.length && !allowEmpty) {
     throw new Error('No valid authorized open news issues are available to publish');
   }
@@ -122,6 +127,7 @@ if (require.main === module) {
 module.exports = {
   MAX_QUEUED_ISSUES,
   authorizedDigests,
+  boundedImportableIssues,
   collectIssues,
   filterImportable,
   flattenPages,
