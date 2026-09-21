@@ -1,5 +1,25 @@
 {
   "schema_version": 1,
-  "latest": null,
-  "editions": []
+  "latest": {
+    "edition_date": "2026-09-22",
+    "revision": 1,
+    "path": "data/2026-09-22/r1.json",
+    "briefing_id": "2026-09-22-evening",
+    "generated_at": "2026-09-22T01:04:26+04:00"
+  },
+  "editions": [
+    {
+      "edition_date": "2026-09-22",
+      "briefing_id": "2026-09-22-evening",
+      "latest_revision": 1,
+      "revisions": [
+        {
+          "revision": 1,
+          "path": "data/2026-09-22/r1.json",
+          "briefing_id": "2026-09-22-evening",
+          "generated_at": "2026-09-22T01:04:26+04:00"
+        }
+      ]
+    }
+  ]
 }
