@@ -2,14 +2,17 @@
 
 const assert = require('assert');
 const {
+  adjacentStoryIndex,
   applyReaderPreferences,
   calculateReadingProgress,
   createTableOfContentsEntries,
   createFrameScheduler,
   dismissReaderSettings,
+  findActiveStoryIndex,
   initializeTableOfContents,
   isNavActive,
   normalizeReaderPreferences,
+  pickClosestIntersecting,
   readReaderPreferences,
   readStoredTheme,
   readerControlState,
@@ -243,5 +246,28 @@ scheduledFrames[0]();
 assert.strictEqual(scheduledUpdates, 1);
 assert.strictEqual(queueUpdate(), true);
 assert.strictEqual(scheduledFrames.length, 2);
+
+// News story rail: reading position and j/k navigation.
+assert.strictEqual(findActiveStoryIndex([-800, -120, 40, 900]), 2);
+assert.strictEqual(findActiveStoryIndex([500, 900, 1400]), 0);
+assert.strictEqual(findActiveStoryIndex([-500, -300, -50]), 2);
+assert.strictEqual(findActiveStoryIndex([]), 0);
+
+assert.strictEqual(adjacentStoryIndex(2, 1, 5), 3);
+assert.strictEqual(adjacentStoryIndex(4, 1, 5), 4);
+assert.strictEqual(adjacentStoryIndex(0, -1, 5), 0);
+assert.strictEqual(adjacentStoryIndex(-1, 1, 5), 0);
+assert.strictEqual(adjacentStoryIndex(-1, -1, 5), 0);
+assert.strictEqual(adjacentStoryIndex(2, 1, 0), -1);
+
+assert.strictEqual(pickClosestIntersecting([
+  { id: 'a', top: 300, isIntersecting: true },
+  { id: 'b', top: -50, isIntersecting: true },
+  { id: 'c', top: 900, isIntersecting: false }
+]), 'b');
+assert.strictEqual(pickClosestIntersecting([
+  { id: 'a', top: 300, isIntersecting: false }
+]), null);
+assert.strictEqual(pickClosestIntersecting([]), null);
 
 console.log('Client tests passed');
