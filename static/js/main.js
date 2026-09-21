@@ -163,10 +163,13 @@ function resolveTheme(explicitTheme, prefersDark) {
   return prefersDark ? 'dark' : 'light';
 }
 
-function themeControlState(theme) {
+function themeControlState(theme, language = 'en') {
   const dark = theme === 'dark';
+  const georgian = language === 'ka';
   return {
-    label: dark ? 'Switch to light mode' : 'Switch to dark mode',
+    label: georgian
+      ? dark ? 'ღია ფერზე გადასვლა' : 'მუქ ფერზე გადასვლა'
+      : dark ? 'Switch to light mode' : 'Switch to dark mode',
     pressed: String(dark)
   };
 }
@@ -226,7 +229,7 @@ if (typeof document !== 'undefined') {
 
     const updateThemeControl = () => {
       if (!toggle) return;
-      const state = themeControlState(effectiveTheme());
+      const state = themeControlState(effectiveTheme(), root.lang);
       toggle.setAttribute('aria-pressed', state.pressed);
       toggle.setAttribute('aria-label', state.label);
     };

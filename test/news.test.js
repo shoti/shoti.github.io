@@ -56,6 +56,13 @@ const duplicateStories = structuredClone(fixture);
 duplicateStories.stories.push({ ...structuredClone(fixture.stories[0]), importance: 2 });
 assert.throws(() => validateBriefing(duplicateStories), /duplicates story ID/);
 
+const unexpectedCriticalTopic = structuredClone(fixture);
+unexpectedCriticalTopic.stories[0].category = 'space-weather';
+assert.doesNotThrow(() => validateBriefing(unexpectedCriticalTopic));
+const invalidCategory = structuredClone(fixture);
+invalidCategory.stories[0].category = 'Space weather';
+assert.throws(() => validateBriefing(invalidCategory), /lowercase hyphenated slug/);
+
 const missingSources = structuredClone(fixture);
 missingSources.stories[0].sources = [];
 assert.throws(() => validateBriefing(missingSources), /must contain 1-8 sources/);
@@ -420,6 +427,7 @@ try {
   correction.revision = 2;
   correction.corrects_revision = 1;
   correction.generated_at = '2026-09-20T20:30:00+04:00';
+  correction.stories[0].category = 'space-weather';
   correction.stories[0].headline += ' — შესწორებული და განზრახ ძალიან გრძელი ქართული სათაური მობილური განლაგების შესამოწმებლად';
   applyImportPlan(planImport(buildRoot, correction));
 
@@ -430,10 +438,14 @@ try {
   const archive = fs.readFileSync(path.join(buildRoot, 'dist', 'news', 'archive', 'index.html'), 'utf8');
   assert.match(latest, /<html lang="ka">/);
   assert.match(latest, /შესწორებული და განზრახ ძალიან გრძელი ქართული სათაური/);
+  assert.match(latest, /თუ მხოლოდ ერთი წუთი გაქვთ/);
+  assert.match(latest, /მნიშვნელოვანი ამბავი/);
+  assert.match(latest, /href="#fictional-public-service-update"/);
+  assert.match(latest, /სარჩევში დაბრუნება/);
   assert.match(latest, /https:\/\/example\.com\/fictional-news-fixture/);
   assert.doesNotMatch(latest, /&lt;article class=&quot;news-story&quot;/);
   assert.match(dated, /<link rel="canonical" href="https:\/\/shoti\.github\.io\/news\/2026-09-20\/">/);
-  assert.match(dated, /შესწორებების ისტორია \(2\)/);
+  assert.match(dated, /განახლებების ისტორია \(2\)/);
   assert.match(dated, /\/news\/2026-09-20\/revisions\/1\//);
   assert.match(archive, /href="\/news\/2026-09-20\/"/);
   assert.ok(fs.existsSync(path.join(buildRoot, 'dist', 'news', '2026-09-20', 'revisions', '1', 'index.html')));
