@@ -29,11 +29,15 @@ const examplePath = path.join(repositoryRoot, 'news', 'examples', 'briefing.exam
 const fixture = readJson(examplePath, 'fictional news fixture');
 const taskPrompt = fs.readFileSync(path.join(repositoryRoot, 'news', 'CHATGPT_TASK_PROMPT.md'), 'utf8');
 
-assert.match(taskPrompt, /especially demanding, constructive scrutiny to Georgia's current ruling/);
-assert.match(taskPrompt, /those\s+who hold state power deserve the closest accountability reporting/);
-assert.match(taskPrompt, /reasonable classical-liberal or libertarian perspective/);
-assert.match(taskPrompt, /do not let the perspective outrun the facts/);
-assert.match(taskPrompt, /A little dry, gentle humor is welcome/);
+assert.match(taskPrompt, /Deliberately research AI, science, and technology every day/);
+assert.match(taskPrompt, /Scrutinize power wherever it is exercised/);
+assert.match(taskPrompt, /A classical-liberal perspective may inform analysis/);
+assert.match(taskPrompt, /It must not determine which facts are reported/);
+assert.match(taskPrompt, /Label consequential editorial inference with შეფასება:/);
+assert.match(taskPrompt, /Failure to retrieve the feed does not establish that no earlier edition exists/);
+assert.match(taskPrompt, /do not launder it through cautious-sounding wording/);
+assert.match(taskPrompt, /inspect existing intake issues and published edition metadata/);
+assert.match(taskPrompt, /If the creation response is ambiguous or times out/);
 
 assert.doesNotThrow(() => validateBriefing(structuredClone(fixture)));
 assert.strictEqual(localDate('2026-09-20T19:59:59Z'), '2026-09-20');
