@@ -1,0 +1,390 @@
+{
+  "schema_version": "1.0",
+  "briefing_id": "2026-09-21-evening",
+  "edition_date": "2026-09-21",
+  "timezone": "Asia/Tbilisi",
+  "revision": 1,
+  "corrects_revision": null,
+  "generated_at": "2026-09-21T22:32:00+04:00",
+  "coverage": {
+    "start": "2026-09-20T22:31:55+04:00",
+    "end": "2026-09-21T22:31:55+04:00"
+  },
+  "introduction": "იემენში ბრძოლა და შეზღუდული ნაოსნობა ენერგომომარაგების რისკებს ზრდის. საქართველოში დღის მთავარი კითხვებია ბაღებში საკვების უსაფრთხოება, გრანტების კონტროლი, სასამართლოს დასაბუთება და ახალი ავტობანის ხარისხი. ირანული ავიაკომპანიების შეზღუდვა კი მგზავრების გეგმებს უკვე ცვლის.",
+  "takeaways": [
+    "იემენში ჰუსიტები სტრატეგიული სიმაღლეების დაკავებას ცდილობენ; ჰორმუზში აღრიცხული ნაოსნობა კვლავ შემცირებულია.",
+    "თბილისის ბაღებში რძის ნაწარმი პრევენციულად ამოიღეს; ინფექციის წყარო და საკვების კვლევის სრული შედეგები ჯერ უცნობია.",
+    "პოლიტიკური სწავლების სკოლის დაფინანსებას აუდიტი სწავლობს; კანონის დარღვევა ჯერ დადგენილი არ არის."
+  ],
+  "coverage_note": "საიტის მიმდინარე არქივი განულებულია; გამოცემა ბოლო 24 საათს მოიცავს. სოციალური დახმარების პირველადი სტატისტიკა ვერ გაიხსნა — რიცხვები „ნეტგაზეთის“ მიმოხილვიდანაა. ბაღების ლაბორატორიული კვლევებისა და ელისაშვილის საქმეზე სამართლებრივი დოკუმენტების სრული ტექსტები ხელმისაწვდომი არ იყო. გზის შეზღუდვის მიმდინარე დეტალები რადიო თავისუფლების მიერ გადამოწმებულ უწყების ცნობას ეყრდნობა; სამინისტროს პირველწყაროთი დადასტურებულია გახსნის თარიღი და ღირებულება.",
+  "stories": [
+    {
+      "id": "yemen-offensive-hormuz-shipping",
+      "category": "security",
+      "importance": 1,
+      "headline": "იემენში ბრძოლა ფართოვდება; ჰორმუზში ნაოსნობის ახალი მონაცემები შეფერხებას აჩვენებს",
+      "summary": "21 სექტემბერს ჰუსიტები სამხრეთ იემენში სტრატეგიული სიმაღლეების დაკავებას ცდილობდნენ — ამის შესახებ Reuters-ს ხუთმა სამხედრო წყარომ უთხრა. მიზანი, მათი ცნობით, წითელი ზღვის სანაპიროს მოწინააღმდეგის კონტროლირებადი ტერიტორიებისგან მოწყვეტაა. იმავე დღეს გამოქვეყნებული სანაოსნო მონაცემებით, შაბათ-კვირას ჰორმუზი მონიტორინგით აღრიცხულმა 17-მა სატვირთო გემმა გაიარა, წინა შაბათ-კვირას — 37-მა.",
+      "why_it_matters": "იემენის ომი საუდის არაბეთის ნავთობის ინფრასტრუქტურასა და გადაზიდვებსაც აზიანებს. ჰორმუზსა და წითელ ზღვაში შეფერხება ალტერნატიულ გზებს ზღუდავს. შეფასება: საქართველოსთვის რისკი საწვავისა და გადაზიდვის ხარჯებია; კონკრეტული გაძვირება ამ მონაცემებით არ განისაზღვრება.",
+      "uncertainty": "ჰორმუზის მაჩვენებელი მხოლოდ მონიტორინგით აღრიცხულ გემებს ითვლის. გამორთული გადამცემებით მოძრავი ტანკერები მასში არ ხვდება, ამიტომ 17 გემი მთლიანი ნაოსნობის ან ნავთობის ექსპორტის მოცულობას არ აღწერს.",
+      "event_at": null,
+      "sources": [
+        {
+          "id": "source-1",
+          "publisher": "Reuters",
+          "title": "Houthis push for control of Yemen highlands as Trump is said to have called off strikes",
+          "url": "https://www.reuters.com/world/middle-east/houthis-push-control-yemen-highlands-trump-reported-have-called-off-airstrikes-2026-09-21/",
+          "published_at": "2026-09-21T11:06:00Z",
+          "supports": [
+            "summary",
+            "why_it_matters"
+          ]
+        },
+        {
+          "id": "source-2",
+          "publisher": "Reuters",
+          "title": "Vessels trickle through Strait of Hormuz as Middle East conflict persists",
+          "url": "https://www.reuters.com/world/middle-east/vessels-trickle-through-strait-hormuz-mideast-tension-persists-2026-09-21/",
+          "published_at": "2026-09-21T02:36:00Z",
+          "supports": [
+            "summary",
+            "why_it_matters",
+            "uncertainty"
+          ]
+        },
+        {
+          "id": "source-3",
+          "publisher": "Associated Press",
+          "title": "Iran-backed Houthi rebels warn against joining Saudi Arabia in Yemen’s growing civil war",
+          "url": "https://apnews.com/article/yemen-houthis-iran-saudi-arabia-red-sea-93dfe17125c63897b232f6461d81d85c",
+          "published_at": null,
+          "supports": [
+            "why_it_matters"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tbilisi-kindergartens-dairy-withdrawal",
+      "category": "health",
+      "importance": 2,
+      "headline": "თბილისის ბაღებიდან რძის ნაწარმი ამოიღეს; ინფექციის წყარო ჯერ დაუდგენელია",
+      "summary": "თბილისის საბავშვო ბაღების მენიუდან რძის ნაწარმი დროებით ამოიღეს. სააგენტომ რადიო თავისუფლებას უთხრა, რომ ეს კვლევების დასრულებამდე მიღებული პრევენციული ზომაა და პროდუქტში დარღვევის აღმოჩენას არ ნიშნავს. უწყების ცნობით, 18 სექტემბრის მსგავსი ახალი შემთხვევები აღარ გამოვლენილა.",
+      "why_it_matters": "მშობლებს საკვების კვლევისა და გავრცელების წყაროს შესახებ პასუხები სჭირდებათ. ინფექციონისტი მაია ბუწაშვილი არასაკმარის საჯარო კომუნიკაციაზე მიუთითებს. შეფასება: პრევენციული შეზღუდვა უწყებებს კვლევის შედეგების გასაჯაროების პასუხისმგებლობას არ უხსნის.",
+      "uncertainty": "რძის ნაწარმის ინფიცირება დადასტურებული არ არის. NCDC ნოროვირუსს სავარაუდო გამომწვევად ასახელებს; საკვების კვლევის სრული შედეგები საჯარო არ არის.",
+      "event_at": null,
+      "sources": [
+        {
+          "id": "source-1",
+          "publisher": "რადიო თავისუფლება",
+          "title": "თბილისის ბაღების მენიუდან რძის ნაწარმი დროებით ამოიღეს",
+          "url": "https://www.radiotavisupleba.ge/a/33860490.html",
+          "published_at": null,
+          "supports": [
+            "summary",
+            "why_it_matters",
+            "uncertainty"
+          ]
+        },
+        {
+          "id": "source-2",
+          "publisher": "პუბლიკა",
+          "title": "რა ნაბიჯები უნდა გადაიდგას იმისათვის, რომ ბაღის ბავშვების ინტოქსიკაციის საკითხი გამოკვლეულად ჩაითვალოს",
+          "url": "https://publika.ge/ra-nabijebi-unda-gadaidgas/",
+          "published_at": "2026-09-21T18:38:00+04:00",
+          "supports": [
+            "why_it_matters",
+            "uncertainty"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "georgia-political-school-grant-monitoring",
+      "category": "georgia-politics",
+      "importance": 3,
+      "headline": "აუდიტის სამსახურმა პოლიტიკური სწავლების სკოლის დაფინანსების შესწავლა დაიწყო",
+      "summary": "აუდიტის სამსახურმა თბილისის პოლიტიკური სწავლების სკოლის დაფინანსების მონიტორინგი დაიწყო: ამოწმებს, მიიღო თუ არა სკოლამ გრანტი მთავრობის თანხმობის გარეშე. შალვა პაპუაშვილი ეჭვობს, რომ ევროპის საბჭოს მიერ ღონისძიების ხარჯების პირდაპირ დაფარვით კანონს გვერდი აუარეს. მან წესების შესაძლო გამკაცრებაზეც ისაუბრა.",
+      "why_it_matters": "კანონის 5¹ მუხლი შესაბამის უცხოურ გრანტს მთავრობის თანხმობას უკავშირებს. შეფასება: ეს ხელისუფლებას მისდამი კრიტიკული ორგანიზაციების დაფინანსების გადაწყვეტის უფლებასაც აძლევს და დამოუკიდებელი საქმიანობის შეზღუდვის რისკს ქმნის. კონკრეტულ საქმეში უწყებამ უნდა აჩვენოს, რომ გარიგება ნამდვილად გრანტია; პოლიტიკური იარლიყი მტკიცებულებას ვერ ცვლის.",
+      "uncertainty": "საბოლოო დასკვნა არ გამოქვეყნებულა. ხარჯის დაფარვა თავისთავად კანონის დარღვევას არ ამტკიცებს; ხელშეკრულებების სრული შინაარსი ხელმისაწვდომი არ მქონდა.",
+      "event_at": null,
+      "sources": [
+        {
+          "id": "source-1",
+          "publisher": "პუბლიკა",
+          "title": "აუდიტის სამსახურმა არმაზ ახვლედიანის პოლიტიკური სკოლის დაფინანსების საკითხის შესწავლა დაიწყო",
+          "url": "https://publika.ge/auditis-samsakhurma-armaz-akhvledianis-politikuri-skolis-dafinansebis-sakitkhis-sheswavla-daiwyo/",
+          "published_at": "2026-09-21T15:28:00+04:00",
+          "supports": [
+            "summary",
+            "why_it_matters",
+            "uncertainty"
+          ]
+        },
+        {
+          "id": "source-2",
+          "publisher": "ნეტგაზეთი",
+          "title": "აუდიტის სამსახურმა თბილისის პოლიტიკური სწავლების სკოლის მიმართ მონიტორინგი დაიწყო",
+          "url": "https://netgazeti.ge/news/816768/",
+          "published_at": null,
+          "supports": [
+            "summary",
+            "uncertainty"
+          ]
+        },
+        {
+          "id": "source-3",
+          "publisher": "საქართველოს საკანონმდებლო მაცნე",
+          "title": "გრანტების შესახებ",
+          "url": "https://www.matsne.gov.ge/ka/document/view/31510",
+          "published_at": null,
+          "supports": [
+            "why_it_matters",
+            "uncertainty"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "russia-duma-election-results",
+      "category": "world-politics",
+      "importance": 4,
+      "headline": "კრემლის პარტია დუმაში 355 მანდატს იღებს; ევროკავშირი სანქციებს აანონსებს",
+      "summary": "21 სექტემბრის თითქმის დასრულებული ოფიციალური დათვლით, „ერთიან რუსეთს“ დუმის 450 ადგილიდან 355 ერგება. ევროკავშირმა განაცხადა, რომ სანქციებს დაუწესებს უკრაინის ოკუპირებულ ტერიტორიებზე კენჭისყრის ორგანიზატორებსა და კანდიდატებს, ასევე რუსეთში თავისუფალი არჩევნების ხელშემშლელ პირებს.",
+      "why_it_matters": "არჩევნები რეალური ოპოზიციის მკვეთრი შეზღუდვის პირობებში გაიმართა; ეუთოს დამკვირვებლები არ მიუწვევიათ. შეფასება: შედეგი კრემლის ინსტიტუციურ კონტროლს აჩვენებს, მაგრამ თავისუფალი კონკურენციის გარეშე საზოგადოების მხარდაჭერას სრულად ვერ ზომავს. ევროკავშირი ოკუპირებულ ტერიტორიებზე კენჭისყრის შედეგებს არ აღიარებს.",
+      "uncertainty": "სანქციები დაანონსებულია: განცხადებაში არც ახალი პერსონალური სიაა და არც ამოქმედების თარიღი.",
+      "event_at": null,
+      "sources": [
+        {
+          "id": "source-1",
+          "publisher": "Reuters",
+          "title": "Pro-Putin party gets record 355 parliamentary seats, anti-war party a tiny regional foothold",
+          "url": "https://www.reuters.com/world/europe/pro-putin-party-keeps-grip-parliament-anti-war-party-gains-tiny-regional-2026-09-21/",
+          "published_at": "2026-09-21T10:09:00Z",
+          "supports": [
+            "summary",
+            "why_it_matters"
+          ]
+        },
+        {
+          "id": "source-2",
+          "publisher": "Associated Press",
+          "title": "Early results show Russia’s main Kremlin party dominating tightly controlled parliamentary vote",
+          "url": "https://apnews.com/article/russia-election-parliament-duma-putin-ukraine-6f3df3716cbcf8c96711b688762b450b",
+          "published_at": null,
+          "supports": [
+            "why_it_matters"
+          ]
+        },
+        {
+          "id": "source-3",
+          "publisher": "Council of the European Union",
+          "title": "Russia/Ukraine: Statement by the High Representative on behalf of the EU on Russian State Duma elections held on 18-20 September 2026 and their non-applicability on Ukrainian territory",
+          "url": "https://www.consilium.europa.eu/en/press/press-releases/2026/09/21/russiaukraine-statement-by-the-high-representative-on-behalf-of-the-eu-on-russian-state-duma-elections-held-on-18-20-september-2026-and-their-non-applicability-on-ukrainian-territory/",
+          "published_at": null,
+          "supports": [
+            "summary",
+            "why_it_matters",
+            "uncertainty"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "elisashvili-ombudsman-court-opinion",
+      "category": "georgia-politics",
+      "importance": 5,
+      "headline": "ომბუდსმენმა ელისაშვილის საქმეზე ტერორისტული მიზნის დასაბუთება სადავოდ გახადა",
+      "summary": "სახალხო დამცველმა სააპელაციო სასამართლოს ალეკო ელისაშვილის საქმეზე „სასამართლოს მეგობრის“ მოსაზრება წარუდგინა. მისი შეფასებით, პირველმა ინსტანციამ ტერორისტული მიზანი სათანადოდ არ დაასაბუთა და იგი პოლიტიკური პროტესტის მოტივთან ავტომატურად გააიგივა. ელისაშვილს ტერორისტული აქტის მცდელობისთვის 13-წლიანი პატიმრობა აქვს მისჯილი.",
+      "why_it_matters": "ომბუდსმენი პოლიტიკური პროტესტის მოტივისა და ტერორისტული მიზნის გამიჯვნას მოითხოვს. შეფასება: სახელმწიფოს მკაცრი სასჯელისთვის დანაშაულის ყველა ელემენტის დამტკიცება ევალება; პოლიტიკური პროტესტი ამ მტკიცებას ვერ ჩაანაცვლებს. განაჩენი ჯერ არ შეცვლილა.",
+      "uncertainty": null,
+      "event_at": null,
+      "sources": [
+        {
+          "id": "source-1",
+          "publisher": "პუბლიკა",
+          "title": "სახალხო დამცველმა ალეკო ელისაშვილის საქმეზე სასამართლოს მეგობრის მოსაზრება წარადგინა",
+          "url": "https://publika.ge/sakhalkho-damcvelma-aleko-elisashvilis-saqmeze-sasamartlos-megobris-mosazreba-waradgina/",
+          "published_at": "2026-09-21T11:29:00+04:00",
+          "supports": [
+            "summary",
+            "why_it_matters"
+          ]
+        },
+        {
+          "id": "source-2",
+          "publisher": "ინტერპრესნიუსი",
+          "title": "ომბუდსმენი ალეკო ელისაშვილის საქმეზე სააპელაციო სასამართლოს „სასამართლოს მეგობრის“ მოსაზრებით მიმართავს და აღნიშნავს, რომ სასამართლომ ტერორისტული მიზანი პოლიტიკურ პროტესტთან ავტომატურად გააიგივა",
+          "url": "https://www.interpressnews.ge/ka/article/880074-ombudsmeni-aleko-elisashvilis-sakmeze-saapelacio-sasamartlos-sasamartlos-megobris-mosazrebit-mimartavs-da-agnishnavs-rom-sasamartlom-teroristuli-mizani-politikur-protesttan-avtomaturad-gaaigiva/",
+          "published_at": "2026-09-21T11:24:00+04:00",
+          "supports": [
+            "summary",
+            "why_it_matters"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "georgia-iranian-airlines-flight-restrictions",
+      "category": "transport",
+      "importance": 6,
+      "headline": "საქართველოში სანქცირებული ირანული ავიაკომპანიების ფრენები შეწყდა",
+      "summary": "21 სექტემბრიდან საქართველოში აშშ-ის მიერ სანქცირებული ირანული ავიაკომპანიების ოპერირება შეიზღუდა — რადიო თავისუფლების ცნობით, ბოლო რეისები 20 სექტემბერს შესრულდა. ახალი ამბავი ადრე დაანონსებული შეზღუდვის ამოქმედებაა; თავად ამერიკული სანქციები 8 სექტემბერს გამოცხადდა.",
+      "why_it_matters": "შეზღუდვა მგზავრებისა და ტურისტული კომპანიების გეგმებს ცვლის. აშშ-ის ხაზინა სანქცირებული ავიაკომპანიების მომსახურე უცხოურ კომპანიებსაც სანქციების რისკზე აფრთხილებს. ალტერნატიული მარშრუტები დამატებით ხარჯს შეიძლება ნიშნავდეს, თუმცა გაძვირების მასშტაბი დადგენილი არ არის.",
+      "uncertainty": "ამოქმედების შესახებ ცნობა რადიო თავისუფლების რეპორტაჟს ეყრდნობა; ფრენების სრული მონაცემები დამოუკიდებლად ვერ გადავამოწმე.",
+      "event_at": null,
+      "sources": [
+        {
+          "id": "source-1",
+          "publisher": "რადიო თავისუფლება",
+          "title": "საქართველოში ირანული ავიაკომპანიების ფრენები შეწყდა",
+          "url": "https://www.radiotavisupleba.ge/a/33859849.html",
+          "published_at": null,
+          "supports": [
+            "summary",
+            "why_it_matters",
+            "uncertainty"
+          ]
+        },
+        {
+          "id": "source-2",
+          "publisher": "U.S. Department of the Treasury",
+          "title": "Treasury Grounds Iranian Airlines with Sweeping Sanctions Action",
+          "url": "https://home.treasury.gov/news/press-releases/sb0623",
+          "published_at": null,
+          "supports": [
+            "summary",
+            "why_it_matters"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "georgia-social-assistance-august-data",
+      "category": "society",
+      "importance": 7,
+      "headline": "ახალი მიმოხილვით, სოციალური დახმარების მიმღებთა რაოდენობა 140 ათასით შემცირდა",
+      "summary": "„ნეტგაზეთის“ 21 სექტემბრის მიმოხილვით, აგვისტოში სოციალური დახმარების მიმღებთა რაოდენობა დაახლოებით 570 ათასამდე შემცირდა — იანვარზე 140 ათასით ნაკლებამდე. გამოცემა სოციალური მომსახურების სააგენტოს მონაცემებს ეყრდნობა. თუმცა ჯგუფები განსხვავებულად იცვლება: ივლის–აგვისტოში პირდაპირი საარსებო შემწეობის მიმღებთა რაოდენობა თითქმის 17 ათასით გაიზარდა.",
+      "why_it_matters": "დახმარების მიმღებთა რაოდენობაზე პროგრამების წესებიც მოქმედებს. შეფასება: შემცირება სიღარიბის კლებას თავისთავად არ ადასტურებს. მთავრობისგან საჭიროა განმარტება, რამდენ ოჯახს გაუუმჯობესდა შემოსავალი და რამდენმა დაკარგა მხარდაჭერა კვლავ მძიმე მდგომარეობაში ყოფნისას.",
+      "uncertainty": "პირველადი სტატისტიკა ვერ გაიხსნა; რიცხვები ერთი გამოცემის მიმოხილვას ეყრდნობა, რომელიც შემცირების მიზეზებს რაოდენობრივად ვერ ასხვავებს.",
+      "event_at": null,
+      "sources": [
+        {
+          "id": "source-1",
+          "publisher": "ნეტგაზეთი",
+          "title": "სოცდახმარების მიმღებთა რაოდენობა იანვრის შემდეგ 140 000 ადამიანით შემცირდა",
+          "url": "https://netgazeti.ge/news/816617/?amp=1",
+          "published_at": null,
+          "supports": [
+            "summary",
+            "why_it_matters",
+            "uncertainty"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "samtredia-grigoleti-road-damage",
+      "category": "infrastructure",
+      "importance": 8,
+      "headline": "ახალი ავტობანის დაზიანებული მონაკვეთი 25 სექტემბრამდე შეიზღუდა",
+      "summary": "სამტრედია–გრიგოლეთის მაგისტრალის კმ30–კმ42-ზე მოძრაობა 21–25 სექტემბერს ორივე მიმართულებით შეზღუდულია. გზების დეპარტამენტის განმარტებით, ხიდებთან მისასვლელებზე დეფორმაციებია; შეკეთებას კონტრაქტორი საკუთარი ხარჯით ჩაატარებს. მოძრაობა ლესას, ხაჯალიასა და ხაჯალია–სუფსის გზის გავლით გადამისამართდა.",
+      "why_it_matters": "მძღოლებს მარშრუტის შეცვლა მოუწევთ. სამინისტრომ ამ 12-კილომეტრიანი მონაკვეთის სრულად გახსნა 18 ივლისს გამოაცხადა; პროექტი 324.6 მილიონი ლარი დაჯდა. შეფასება: მალევე გამოვლენილი დაზიანება მშენებლობის ხარისხისა და სახელმწიფო ზედამხედველობის ახსნას მოითხოვს. კონტრაქტორის ხარჯით შეკეთება ამ კითხვებს არ პასუხობს.",
+      "uncertainty": "შემოწმებულ ცნობებში დაზიანების ტექნიკური მიზეზი და ზედამხედველობაზე პასუხისმგებლობის შეფასება არ ჩანს.",
+      "event_at": null,
+      "sources": [
+        {
+          "id": "source-1",
+          "publisher": "რადიო თავისუფლება",
+          "title": "გურიაში ავტობანის ახალ მონაკვეთზე „ლოკალური დეფორმაციები“ გამოვლინდა",
+          "url": "https://www.radiotavisupleba.ge/a/33860435.html",
+          "published_at": null,
+          "supports": [
+            "summary",
+            "why_it_matters",
+            "uncertainty"
+          ]
+        },
+        {
+          "id": "source-2",
+          "publisher": "საქართველოს ინფრასტრუქტურის სამინისტრო",
+          "title": "სამტრედია-გრიგოლეთის ჩქაროსნული მაგისტრალის დამატებით 6 კმ-იან მონაკვეთზე მოძრაობა გაიხსნა",
+          "url": "https://moi.gov.ge/ka/press-center/%E1%83%A1%E1%83%98%E1%83%90%E1%83%AE%E1%83%9A%E1%83%94%E1%83%94%E1%83%91%E1%83%98%20&%20%E1%83%A6%E1%83%9D%E1%83%9C%E1%83%98%E1%83%A1%E1%83%AB%E1%83%98%E1%83%94%E1%83%91%E1%83%94%E1%83%91%E1%83%98/samtredia-grigoletis-chkarosnuli-magistralis-damatebit-6-km-ian-monakvetze-modzraoba-gaikhsna",
+          "published_at": null,
+          "supports": [
+            "why_it_matters"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "germany-regional-election-coalitions",
+      "category": "world-politics",
+      "importance": 9,
+      "headline": "ბერლინში მემარცხენეები ლიდერობენ; მეკლენბურგში პირველი AfD არის",
+      "summary": "20 სექტემბრის არჩევნების ღამით გამოქვეყნებული შედეგებით, ბერლინში Die Linke-მ ხმების დაახლოებით მეოთხედი მიიღო და პირველ ადგილზე გავიდა. მეკლენბურგ-წინა პომერანიაში AfD-ს 38.2% ერგო, სოციალ-დემოკრატებს — 35.5%. 21 სექტემბერს რეგიონის სოციალ-დემოკრატმა ხელმძღვანელმა მემარცხენეებთან და მწვანეებთან მოლაპარაკების სურვილი გამოთქვა.",
+      "why_it_matters": "პირველ ადგილზე გასვლა მთავრობის შექმნას არ ნიშნავს: საჭიროა საპარლამენტო უმრავლესობა. ბერლინში გამარჯვებულთა დაპირებაა ბინების დიდი ნაწილის საჯარო საკუთრებაში გადატანა; ეს ჯერ მიღებული გადაწყვეტილება არ არის. ფედერალური მთავრობა ამ არჩევნებით არ იცვლება.",
+      "uncertainty": "რეგიონული მთავრობების შემადგენლობა ჯერ შეუთანხმებელია. AfD მეკლენბურგში პირველია, მაგრამ დანარჩენი პარტიები მასთან კოალიციას გამორიცხავენ.",
+      "event_at": null,
+      "sources": [
+        {
+          "id": "source-1",
+          "publisher": "Reuters",
+          "title": "Far-left party wins Berlin election, pledging to nationalise housing",
+          "url": "https://www.reuters.com/world/far-left-party-wins-berlin-election-pledging-nationalise-housing-2026-09-20/",
+          "published_at": "2026-09-20T21:17:00Z",
+          "supports": [
+            "summary",
+            "why_it_matters"
+          ]
+        },
+        {
+          "id": "source-2",
+          "publisher": "NDR",
+          "title": "SPD will mit Linken und Grünen sprechen, AfD bereit zur Opposition",
+          "url": "https://www.ndr.de/nachrichten/mecklenburg-vorpommern/landtagswahl/historisches-wahlergebnis-in-mecklenburg-vorpommern-cdu-raus-afd-vor-spd,mvwahl-370.html",
+          "published_at": null,
+          "supports": [
+            "summary",
+            "why_it_matters",
+            "uncertainty"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "google-location-data-privacy-fine",
+      "category": "technology",
+      "importance": 10,
+      "headline": "ირლანდიის მარეგულირებელმა Google მდებარეობის მონაცემებისთვის €403 მილიონით დააჯარიმა",
+      "summary": "ირლანდიის მონაცემთა დაცვის კომისიამ Google-ს 403 მილიონი ევროს ჯარიმა დააკისრა და მდებარეობის მონაცემთა დამუშავების წესების შესაცვლელად ექვსი თვე მისცა. გამოძიება 2018–2020 წლებში სამი ფუნქციის მუშაობას ეხებოდა. კომპანიამ Reuters-ს უთხრა, რომ მას შემდეგ მონაცემების მართვისა და წაშლის ინსტრუმენტები შეცვალა.",
+      "why_it_matters": "მარეგულირებლის დასკვნით, მომხმარებლებს შეიძლებოდა არ სცოდნოდათ, როგორ იყენებდნენ მათ მდებარეობას ინტერესების გამოსაცნობად და რეკლამის შესარჩევად. საქმე მონაცემების დამუშავების კანონიერებასა და გამჭვირვალობას ეხება; ახალი ინფორმაციული გაჟონვის შესახებ ცნობა არ არის.",
+      "uncertainty": "კომისიის განცხადებით, გადაწყვეტილების სრული ტექსტი მოგვიანებით გამოქვეყნდება. ამ ეტაპზე ხელმისაწვდომია მისი ოფიციალური შეჯამება და კომპანიის პასუხი.",
+      "event_at": null,
+      "sources": [
+        {
+          "id": "source-1",
+          "publisher": "Data Protection Commission",
+          "title": "Data Protection Commission fines Google €403 million following Inquiry into Google’s processing of location data",
+          "url": "https://www.dataprotection.ie/en/news-media/latest-news/data-protection-commission-fines-google-eu403-million-following-inquiry-googles-processing-location",
+          "published_at": null,
+          "supports": [
+            "summary",
+            "why_it_matters",
+            "uncertainty"
+          ]
+        },
+        {
+          "id": "source-2",
+          "publisher": "Reuters",
+          "title": "Irish privacy regulator fines Google €403 million over location data processing",
+          "url": "https://www.reuters.com/business/media-telecom/irish-regulator-fines-google-403-million-over-location-data-processing-2026-09-21/",
+          "published_at": "2026-09-21T09:19:00Z",
+          "supports": [
+            "summary",
+            "why_it_matters"
+          ]
+        }
+      ]
+    }
+  ]
+}
