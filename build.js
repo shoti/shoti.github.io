@@ -3,12 +3,14 @@
 
 const fs = require('fs');
 const path = require('path');
+const { loadEdition, loadNewsIndex, validateSafeSourceUrl } = require('./lib/news');
 
 const BASE_URL = 'https://shoti.github.io';
 const POSTS_DIR = path.join(__dirname, 'content', 'posts');
 const TEMPLATES_DIR = path.join(__dirname, 'templates');
 const STATIC_DIR = path.join(__dirname, 'static');
 const DIST_DIR = path.join(__dirname, 'dist');
+const NEWS_DIR = path.join(__dirname, 'news');
 
 const REQUIRED_POST_FIELDS = ['title', 'slug', 'date', 'description', 'body', 'tags'];
 
@@ -323,6 +325,30 @@ function formatDate(dateStr) {
   return months[d.getUTCMonth()] + ' ' + d.getUTCDate() + ', ' + d.getUTCFullYear();
 }
 
+function formatGeorgianDate(dateStr) {
+  return new Intl.DateTimeFormat('ka-GE', {
+    timeZone: 'Asia/Tbilisi',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  }).format(new Date(dateStr + 'T12:00:00+04:00'));
+}
+
+function formatGeorgianTimestamp(timestamp) {
+  return new Intl.DateTimeFormat('ka-GE', {
+    timeZone: 'Asia/Tbilisi',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23'
+  }).format(new Date(timestamp));
+}
+
+function formatCoverage(coverage) {
+  return `${formatGeorgianTimestamp(coverage.start)} – ${formatGeorgianTimestamp(coverage.end)}`;
+}
+
 function wordCount(text) {
   return text.split(/\s+/).filter(Boolean).length;
 }
@@ -476,6 +502,9 @@ const postTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'post.html'), 'utf
 const archiveTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'archive.html'), 'utf-8');
 const aboutTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'about.html'), 'utf-8');
 const notFoundTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, '404.html'), 'utf-8');
+const newsTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'news.html'), 'utf-8');
+const newsEmptyTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'news-empty.html'), 'utf-8');
+const newsArchiveTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'news-archive.html'), 'utf-8');
 
 // Load and validate posts
 function readJson(filePath, label) {
@@ -529,7 +558,157 @@ copyDir(STATIC_DIR, DIST_DIR);
 // --- Generate Pages ---
 
 function wrapInBase(content, data) {
-  return render(baseTemplate, Object.assign({ content: content }, data));
+  return render(baseTemplate, Object.assign({
+    content: content,
+    lang: 'en',
+    ogLocale: 'en_US',
+    bodyClass: '',
+    skipLabel: 'Skip to content'
+  }, data));
+}
+
+const NEWS_CATEGORY_LABELS = {
+  'georgia-politics': 'საქართველო · პოლიტიკა',
+  'world-politics': 'მსოფლიო · პოლიტიკა',
+  science: 'მეცნიერება',
+  technology: 'ტექნოლოგია',
+  ai: 'ხელოვნური ინტელექტი',
+  other: 'სხვა მნიშვნელოვანი ამბავი'
+};
+
+const NEWS_CLAIM_LABELS = {
+  summary: 'რა მოხდა',
+  why_it_matters: 'რატომ არის მნიშვნელოვანი',
+  uncertainty: 'რა რჩება გაურკვეველი'
+};
+
+function renderNewsSources(story) {
+  return story.sources.map(source => {
+    const safeUrl = validateSafeSourceUrl(source.url, `source ${source.id}`);
+    const published = source.published_at
+      ? ` · <time datetime="${escapeHtml(source.published_at)}">${escapeHtml(formatGeorgianTimestamp(source.published_at))}</time>`
+      : '';
+    const support = source.supports.map(item => NEWS_CLAIM_LABELS[item]).join(', ');
+    return '<li>' +
+      '<a href="' + escapeHtml(safeUrl) + '" target="_blank" rel="noopener noreferrer">' +
+      '<span class="news-source-publisher">' + escapeHtml(source.publisher) + '</span>' +
+      '<span class="news-source-title">' + escapeHtml(source.title) + '</span>' +
+      '</a>' + published +
+      '<span class="news-source-support">ადასტურებს: ' + escapeHtml(support) + '</span>' +
+      '</li>';
+  }).join('');
+}
+
+function renderNewsStories(briefing) {
+  return briefing.stories.map(story => {
+    const eventTime = story.event_at
+      ? '<p class="news-event-time">მოვლენის დრო: <time datetime="' + escapeHtml(story.event_at) + '">' +
+        escapeHtml(formatGeorgianTimestamp(story.event_at)) + '</time></p>'
+      : '';
+    const uncertainty = story.uncertainty
+      ? '<div class="news-uncertainty"><h3>რა რჩება გაურკვეველი</h3><p>' + escapeHtml(story.uncertainty) + '</p></div>'
+      : '';
+    return '<article class="news-story" id="' + escapeHtml(story.id) + '">' +
+      '<header><div class="news-story-label"><span>' + story.importance + '</span>' +
+      escapeHtml(NEWS_CATEGORY_LABELS[story.category]) + '</div>' +
+      '<h2>' + escapeHtml(story.headline) + '</h2>' + eventTime + '</header>' +
+      '<div class="news-story-copy"><p>' + escapeHtml(story.summary) + '</p>' +
+      '<div class="news-why"><h3>რატომ არის მნიშვნელოვანი</h3><p>' + escapeHtml(story.why_it_matters) + '</p></div>' +
+      uncertainty + '</div>' +
+      '<div class="news-sources"><h3>წყაროები</h3><ol>' + renderNewsSources(story) + '</ol></div>' +
+      '</article>';
+  }).join('');
+}
+
+function newsWordCount(briefing) {
+  const text = [
+    briefing.introduction,
+    ...briefing.takeaways,
+    briefing.coverage_note || '',
+    ...briefing.stories.flatMap(story => [story.headline, story.summary, story.why_it_matters, story.uncertainty || ''])
+  ].join(' ');
+  return wordCount(text);
+}
+
+function validateNewsIndexRecords(newsIndex) {
+  const editions = newsIndex.editions.map(edition => {
+    if (!edition || typeof edition !== 'object' || !/^\d{4}-\d{2}-\d{2}$/.test(edition.edition_date) ||
+        typeof edition.briefing_id !== 'string' || !Number.isSafeInteger(edition.latest_revision) ||
+        !Array.isArray(edition.revisions) || edition.revisions.length < 1) {
+      throw new Error(`Invalid news index entry for ${edition?.edition_date || 'unknown edition'}`);
+    }
+    const revisions = edition.revisions.map(record => {
+      const briefing = loadEdition(__dirname, record.path);
+      if (briefing.edition_date !== edition.edition_date || briefing.briefing_id !== edition.briefing_id ||
+          briefing.revision !== record.revision || briefing.generated_at !== record.generated_at) {
+        throw new Error(`News index metadata does not match news/${record.path}`);
+      }
+      return { ...record, briefing };
+    }).sort((a, b) => a.revision - b.revision);
+    if (!revisions.some(record => record.revision === edition.latest_revision)) {
+      throw new Error(`News index latest revision is missing for ${edition.edition_date}`);
+    }
+    return { ...edition, revisions };
+  }).sort((a, b) => b.edition_date.localeCompare(a.edition_date));
+
+  if (editions.length === 0) {
+    if (newsIndex.latest !== null) throw new Error('News index latest must be null when the archive is empty');
+    return editions;
+  }
+  const newest = editions[0];
+  if (!newsIndex.latest || newsIndex.latest.edition_date !== newest.edition_date ||
+      newsIndex.latest.revision !== newest.latest_revision) {
+    throw new Error('News index latest pointer does not match the newest valid edition');
+  }
+  return editions;
+}
+
+function renderNewsBriefingPage(briefing, edition, options = {}) {
+  const revisionHistory = edition.revisions.length > 1;
+  const revisionHistoryHtml = edition.revisions.map(record => {
+    const current = record.revision === briefing.revision ? ' aria-current="page"' : '';
+    return '<li><a href="/news/' + edition.edition_date + '/revisions/' + record.revision + '/"' + current +
+      '>ვერსია ' + record.revision + '</a> · <time datetime="' + escapeHtml(record.generated_at) + '">' +
+      escapeHtml(formatGeorgianTimestamp(record.generated_at)) + '</time></li>';
+  }).join('');
+  const editionJsonUrl = `/news/data/${briefing.edition_date}/r${briefing.revision}.json`;
+  return render(newsTemplate, {
+    editionHeading: `${formatGeorgianDate(briefing.edition_date)} — დღის მთავარი ამბები`,
+    editionDate: briefing.edition_date,
+    editionDateFormatted: formatGeorgianDate(briefing.edition_date),
+    coverageFormatted: `გაშუქება: ${formatCoverage(briefing.coverage)}`,
+    generatedFormatted: formatGeorgianTimestamp(briefing.generated_at),
+    readingTime: Math.max(1, Math.round(newsWordCount(briefing) / 180)),
+    isLatest: Boolean(options.isLatest),
+    introduction: briefing.introduction,
+    takeawaysHtml: briefing.takeaways.map(item => '<li>' + escapeHtml(item) + '</li>').join(''),
+    storiesHtml: renderNewsStories(briefing),
+    coverageNote: briefing.coverage_note,
+    editionJsonUrl,
+    revisionHistory,
+    revisionCount: edition.revisions.length,
+    revisionHistoryHtml
+  });
+}
+
+function newsBaseData(briefing, canonical, options = {}) {
+  const description = briefing
+    ? briefing.introduction
+    : 'ყოველდღიური ქართული საღამოს მიმოხილვა პირდაპირი წყაროებით.';
+  return {
+    title: briefing ? `${formatGeorgianDate(briefing.edition_date)} — საღამოს მიმოხილვა` : 'საღამოს მიმოხილვა',
+    ogTitle: briefing ? `${formatGeorgianDate(briefing.edition_date)} — დღის ამბები` : 'საღამოს მიმოხილვა',
+    description,
+    canonical,
+    ogType: briefing ? 'article' : 'website',
+    ogImage: '',
+    head: options.head || '',
+    readingProgress: false,
+    lang: 'ka',
+    ogLocale: 'ka_GE',
+    bodyClass: 'news-page',
+    skipLabel: 'შინაარსზე გადასვლა'
+  };
 }
 
 // Homepage
@@ -669,6 +848,81 @@ const aboutPage = wrapInBase(aboutContent, {
 });
 writeFile(path.join(DIST_DIR, 'about', 'index.html'), aboutPage);
 
+// Daily news briefing and archive
+const newsIndex = loadNewsIndex(__dirname);
+const newsEditions = validateNewsIndexRecords(newsIndex);
+writeFile(path.join(DIST_DIR, 'news', 'schema', 'briefing-1.0.json'),
+  fs.readFileSync(path.join(NEWS_DIR, 'schema', 'briefing.schema.json'), 'utf8'));
+writeFile(path.join(DIST_DIR, 'news', 'feed.json'), serializeJsonForHtml(newsIndex) + '\n');
+
+for (const edition of newsEditions) {
+  for (const record of edition.revisions) {
+    writeFile(
+      path.join(DIST_DIR, 'news', 'data', edition.edition_date, `r${record.revision}.json`),
+      JSON.stringify(record.briefing, null, 2) + '\n'
+    );
+    const revisionContent = renderNewsBriefingPage(record.briefing, edition, { isLatest: false });
+    const revisionPage = wrapInBase(revisionContent, newsBaseData(
+      record.briefing,
+      `${BASE_URL}/news/${edition.edition_date}/revisions/${record.revision}/`
+    ));
+    writeFile(
+      path.join(DIST_DIR, 'news', edition.edition_date, 'revisions', String(record.revision), 'index.html'),
+      revisionPage
+    );
+  }
+
+  const latestRevision = edition.revisions.find(record => record.revision === edition.latest_revision);
+  const datedContent = renderNewsBriefingPage(latestRevision.briefing, edition, {
+    isLatest: newsIndex.latest.edition_date === edition.edition_date
+  });
+  const newsArticleSchema = serializeJsonForHtml({
+    '@context': 'https://schema.org',
+    '@type': 'NewsArticle',
+    headline: `${formatGeorgianDate(edition.edition_date)} — დღის მთავარი ამბები`,
+    datePublished: latestRevision.briefing.generated_at,
+    dateModified: latestRevision.briefing.generated_at,
+    inLanguage: 'ka',
+    url: `${BASE_URL}/news/${edition.edition_date}/`,
+    isAccessibleForFree: true
+  });
+  const datedPage = wrapInBase(datedContent, newsBaseData(
+    latestRevision.briefing,
+    `${BASE_URL}/news/${edition.edition_date}/`,
+    { head: `<script type="application/ld+json">${newsArticleSchema}</script>` }
+  ));
+  writeFile(path.join(DIST_DIR, 'news', edition.edition_date, 'index.html'), datedPage);
+}
+
+let latestNewsPage;
+if (newsEditions.length) {
+  const latestEdition = newsEditions[0];
+  const latestRevision = latestEdition.revisions.find(record => record.revision === latestEdition.latest_revision);
+  const latestContent = renderNewsBriefingPage(latestRevision.briefing, latestEdition, { isLatest: true });
+  latestNewsPage = wrapInBase(latestContent, newsBaseData(latestRevision.briefing, `${BASE_URL}/news/`));
+} else {
+  latestNewsPage = wrapInBase(newsEmptyTemplate, newsBaseData(null, `${BASE_URL}/news/`));
+}
+writeFile(path.join(DIST_DIR, 'news', 'index.html'), latestNewsPage);
+
+const newsArchiveItems = newsEditions.map(edition => {
+  const latestRevision = edition.revisions.find(record => record.revision === edition.latest_revision);
+  const revisionLabel = edition.latest_revision > 1 ? ` · შესწორება ${edition.latest_revision}` : '';
+  return '<li><a href="/news/' + edition.edition_date + '/"><time datetime="' + edition.edition_date + '">' +
+    escapeHtml(formatGeorgianDate(edition.edition_date)) + '</time><span>' +
+    escapeHtml(latestRevision.briefing.introduction) + '</span><small>' +
+    latestRevision.briefing.stories.length + ' ამბავი · ' +
+    Math.max(1, Math.round(newsWordCount(latestRevision.briefing) / 180)) + ' წუთი' + revisionLabel +
+    '</small></a></li>';
+}).join('');
+const newsArchiveContent = render(newsArchiveTemplate, {
+  hasEditions: newsEditions.length > 0,
+  isEmpty: newsEditions.length === 0,
+  editionsHtml: newsArchiveItems
+});
+const newsArchivePage = wrapInBase(newsArchiveContent, newsBaseData(null, `${BASE_URL}/news/archive/`));
+writeFile(path.join(DIST_DIR, 'news', 'archive', 'index.html'), newsArchivePage);
+
 // 404 page
 const notFoundContent = render(notFoundTemplate, { posts: homePosts.slice(0, 5) });
 const notFoundPage = wrapInBase(notFoundContent, {
@@ -717,8 +971,14 @@ writeFile(path.join(DIST_DIR, 'rss.xml'), rss);
 const sitemapEntries = [
   { url: BASE_URL + '/', date: posts.length > 0 ? posts[0].date : null },
   { url: BASE_URL + '/archive/', date: posts.length > 0 ? posts[0].date : null },
-  { url: BASE_URL + '/about/', date: null }
-].concat(posts.map(p => ({ url: BASE_URL + '/posts/' + p.slug + '/', date: p.date })));
+  { url: BASE_URL + '/about/', date: null },
+  { url: BASE_URL + '/news/', date: newsIndex.latest ? newsIndex.latest.edition_date : null },
+  { url: BASE_URL + '/news/archive/', date: newsIndex.latest ? newsIndex.latest.edition_date : null }
+].concat(posts.map(p => ({ url: BASE_URL + '/posts/' + p.slug + '/', date: p.date })))
+  .concat(newsEditions.map(edition => ({
+    url: BASE_URL + '/news/' + edition.edition_date + '/',
+    date: edition.edition_date
+  })));
 
 const sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n' +
   '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +

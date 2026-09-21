@@ -198,6 +198,8 @@ assert.strictEqual(subscribeToMediaChanges({}, () => {}), false);
 assert.strictEqual(isNavActive('/', '/'), true);
 assert.strictEqual(isNavActive('/posts/example/', '/'), true);
 assert.strictEqual(isNavActive('/archive/', '/archive/'), true);
+assert.strictEqual(isNavActive('/news/', '/news/'), true);
+assert.strictEqual(isNavActive('/news/2026-09-20/', '/news/'), true);
 assert.strictEqual(isNavActive('/about/', '/about/'), true);
 assert.strictEqual(isNavActive('/404.html', '/'), false);
 

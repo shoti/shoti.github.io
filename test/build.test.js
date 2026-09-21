@@ -128,6 +128,9 @@ const post = fs.readFileSync(
   'utf8'
 );
 const notFound = fs.readFileSync(path.join(distDir, '404.html'), 'utf8');
+const news = fs.readFileSync(path.join(distDir, 'news', 'index.html'), 'utf8');
+const newsArchive = fs.readFileSync(path.join(distDir, 'news', 'archive', 'index.html'), 'utf8');
+const newsIndex = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'news', 'index.json'), 'utf8'));
 const themeBootstrapIndex = home.indexOf("localStorage.getItem('theme')");
 const readerBootstrapIndex = home.indexOf("localStorage.getItem('reader-' + setting)");
 const stylesheetIndex = home.indexOf('<link rel="stylesheet" href="/css/style.css">');
@@ -146,5 +149,14 @@ assert.match(post, /<div class="post-body">\s*<p>/);
 assert.match(post, /<h2 id="section-[a-z0-9-]+">/);
 assert.doesNotMatch(post, /\{\{\{?[\w#/ ]+\}?\}\}/);
 assert.match(notFound, /<a href="\/">Go back to the blog<\/a>/);
+assert.match(news, /<html lang="ka">/);
+assert.match(news, /<link rel="canonical" href="https:\/\/shoti\.github\.io\/news\/">/);
+if (newsIndex.latest === null) {
+  assert.match(news, /პირველი გადამოწმებული ქართული მიმოხილვა ჯერ არ გამოქვეყნებულა/);
+} else {
+  assert.match(news, new RegExp(`<time datetime="${newsIndex.latest.edition_date}">`));
+}
+assert.match(newsArchive, /<link rel="canonical" href="https:\/\/shoti\.github\.io\/news\/archive\/">/);
+assert.ok(fs.existsSync(path.join(distDir, 'news', 'schema', 'briefing-1.0.json')));
 
 console.log('Build tests passed');

@@ -1,0 +1,46 @@
+<article class="news-briefing">
+  <header class="news-masthead">
+    <div class="news-kicker">საღამოს მიმოხილვა</div>
+    <h1>{{editionHeading}}</h1>
+    <div class="news-edition-meta">
+      <time datetime="{{editionDate}}">{{editionDateFormatted}}</time>
+      <span>{{coverageFormatted}}</span>
+      <span>{{readingTime}} წუთი</span>
+    </div>
+    {{#if isLatest}}<p class="news-latest-note">უახლესი გამოშვება · გამოქვეყნებულია {{generatedFormatted}}</p>{{/if}}
+  </header>
+
+  <section class="news-overview" aria-labelledby="news-overview-title">
+    <h2 id="news-overview-title">მოკლედ</h2>
+    <p class="news-introduction">{{introduction}}</p>
+    <ul class="news-takeaways">
+      {{{takeawaysHtml}}}
+    </ul>
+  </section>
+
+  <div class="news-stories">
+    {{{storiesHtml}}}
+  </div>
+
+  {{#if coverageNote}}
+  <aside class="news-coverage-note" aria-label="გაშუქების შენიშვნა">
+    <strong>გაშუქების შენიშვნა</strong>
+    <p>{{coverageNote}}</p>
+  </aside>
+  {{/if}}
+
+  <footer class="news-disclosure">
+    <p>მიმოხილვა მომზადებულია AI-ის დახმარებით და გადის სტრუქტურულ შემოწმებას. ფაქტების გადასამოწმებლად გამოიყენეთ თითოეულ ამბავთან მითითებული პირდაპირი წყაროები.</p>
+    <nav aria-label="გამოშვების ბმულები">
+      <a href="/news/archive/">წინა გამოშვებები</a>
+      <a href="{{editionJsonUrl}}">ამ გამოშვების JSON</a>
+    </nav>
+  </footer>
+
+  {{#if revisionHistory}}
+  <details class="news-revisions">
+    <summary>შესწორებების ისტორია ({{revisionCount}})</summary>
+    <ol>{{{revisionHistoryHtml}}}</ol>
+  </details>
+  {{/if}}
+</article>
