@@ -31,6 +31,11 @@ must end no later than generation. Story
 importance values must be sequential and match array order. Story and source IDs
 must be unique in their scopes.
 
+`category` is an open lowercase slug used only for navigation. Familiar values
+receive a Georgian display label, while a new or unexpected topic remains valid
+and is shown as a general important story. Category metadata must never decide
+whether a consequential story can be published.
+
 Each source declares which story field it supports through `supports`:
 `summary`, `why_it_matters`, or `uncertainty`. Every story must have support for
 the first two, and for uncertainty whenever that field is present. URLs must be
@@ -111,40 +116,25 @@ reopens its issue before recording the new digest. The next queue sweep therefor
 retains the corrected payload. Import-ineligible collisions are skipped and left
 open for correction instead of blocking later valid issues.
 
-## Account-side activation checklist
+## Current account setup
 
-This checkout cannot complete these account-level steps. At implementation time,
-the GitHub plugin was available but was not installed or connected, and the local
-GitHub CLI credential was expired. Therefore the code is implemented and locally
-tested, but the ChatGPT-to-GitHub connection is not yet verified or live.
+The production connection was verified on 2026-09-21:
 
-1. In ChatGPT, install the GitHub plugin and connect the GitHub account that may
-   access `shoti/shoti.github.io`. Grant the narrowest available repository scope
-   with repository read and issue creation access.
-2. In a normal (not scheduled) ChatGPT chat, explicitly invoke the GitHub plugin
-   and create one disposable `[news-test]` issue in this repository. Confirm that
-   the plugin actually exposes an issue-create action. Record the issue author's
-   exact GitHub login, including a possible `[bot]` suffix. Delete/close the test
-   issue manually after verification.
-3. In repository Settings → Secrets and variables → Actions → Variables, create
-   `NEWS_ALLOWED_SENDERS` as a comma-separated allowlist containing only that
-   exact observed login. This is a repository variable, not a secret. Until it
-   exists, ordinary site deployments continue but issue intake remains disabled.
-4. Ensure Issues are enabled. In Settings → Actions → General, allow workflows
-   to receive read/write `GITHUB_TOKEN` permissions. No custom token or secret is
-   required by this implementation.
-5. In Settings → Pages, keep Source set to **GitHub Actions**. Preserve existing
-   branch protection/rulesets. The publication workflow needs permission to push
-   its validated commit to `main`; if current rules forbid that push, do not
-   weaken them. Use the manual PR recovery below instead, or explicitly approve
-   a policy-compliant automation actor under the existing rules.
-6. Run the copy-ready prompt in `news/CHATGPT_TASK_PROMPT.md` once manually. Verify
-   the issue author identity, successful `Deploy to GitHub Pages`
-   run, committed JSON, `/news/`, the dated URL, and source links.
-7. Only after that end-to-end test, create one standalone ChatGPT scheduled task
-   for daily **20:00 Asia/Tbilisi** using the same prompt. Publication happens
-   after research, validation, Actions, and Pages deployment; 20:00 is the
-   research start target, not a guaranteed public availability time.
+- the connected GitHub issue author is exactly `shoti`;
+- repository variable `NEWS_ALLOWED_SENDERS` is `shoti`;
+- Issues are enabled and Actions has read/write `GITHUB_TOKEN` permission;
+- GitHub Pages deploys through Actions;
+- the manual end-to-end run created issue `#8`, committed a validated edition,
+  deployed the dated page, and closed the unchanged intake issue;
+- the active ChatGPT task runs daily at **20:00 Asia/Tbilisi**.
+
+If the connection is ever replaced, repeat the disposable issue test before
+changing `NEWS_ALLOWED_SENDERS`. Use the exact observed GitHub author login,
+including any `[bot]` suffix, keep the GitHub App scoped to this repository, and
+rerun the manual end-to-end publication check before re-enabling the schedule.
+Preserve branch protection and repository rules rather than weakening them for
+automation. The publication time follows research, validation, Actions, and
+Pages deployment; 20:00 is the research start, not guaranteed public availability.
 
 Official OpenAI documentation confirms that scheduled tasks can run in the
 background and that scheduled tasks may use installed plugins, subject to the

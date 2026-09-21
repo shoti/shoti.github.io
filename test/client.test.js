@@ -25,6 +25,8 @@ const {
 } = require('../static/js/main');
 
 assert.strictEqual(readStoredTheme(() => ({ getItem: () => 'dark' })), 'dark');
+assert.strictEqual(themeControlState('dark', 'ka').label, 'ღია ფერზე გადასვლა');
+assert.strictEqual(themeControlState('light', 'ka').label, 'მუქ ფერზე გადასვლა');
 assert.strictEqual(readStoredTheme(() => ({ getItem: () => 'unexpected' })), null);
 assert.strictEqual(readStoredTheme(() => { throw new Error('storage blocked'); }), null);
 assert.strictEqual(readStoredTheme(() => ({ getItem: () => { throw new Error('read blocked'); } })), null);

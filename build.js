@@ -338,7 +338,7 @@ function formatGeorgianTimestamp(timestamp) {
   return new Intl.DateTimeFormat('ka-GE', {
     timeZone: 'Asia/Tbilisi',
     day: 'numeric',
-    month: 'short',
+    month: 'long',
     hour: '2-digit',
     minute: '2-digit',
     hourCycle: 'h23'
@@ -563,24 +563,44 @@ function wrapInBase(content, data) {
     lang: 'en',
     ogLocale: 'en_US',
     bodyClass: '',
-    skipLabel: 'Skip to content'
+    skipLabel: 'Skip to content',
+    primaryNavLabel: 'Primary',
+    blogLabel: 'Blog',
+    newsLabel: 'News',
+    archiveLabel: 'Archive',
+    aboutLabel: 'About',
+    themeLabel: 'Switch to dark mode',
+    sourceLabel: 'Source'
   }, data));
 }
 
 const NEWS_CATEGORY_LABELS = {
-  'georgia-politics': 'საქართველო · პოლიტიკა',
-  'world-politics': 'მსოფლიო · პოლიტიკა',
+  'georgia-politics': 'საქართველო',
+  georgia: 'საქართველო',
+  'world-politics': 'მსოფლიო',
+  world: 'მსოფლიო',
   science: 'მეცნიერება',
-  technology: 'ტექნოლოგია',
+  technology: 'ტექნოლოგიები',
   ai: 'ხელოვნური ინტელექტი',
-  other: 'სხვა მნიშვნელოვანი ამბავი'
+  economy: 'ეკონომიკა',
+  business: 'ბიზნესი',
+  health: 'ჯანმრთელობა',
+  climate: 'გარემო და კლიმატი',
+  culture: 'კულტურა',
+  society: 'საზოგადოება',
+  security: 'უსაფრთხოება',
+  other: 'მნიშვნელოვანი ამბავი'
 };
 
 const NEWS_CLAIM_LABELS = {
-  summary: 'რა მოხდა',
-  why_it_matters: 'რატომ არის მნიშვნელოვანი',
-  uncertainty: 'რა რჩება გაურკვეველი'
+  summary: 'მთავარი ფაქტები',
+  why_it_matters: 'მნიშვნელობა',
+  uncertainty: 'დასაზუსტებელი ნაწილი'
 };
+
+function newsCategoryLabel(category) {
+  return NEWS_CATEGORY_LABELS[category] || NEWS_CATEGORY_LABELS.other;
+}
 
 function renderNewsSources(story) {
   return story.sources.map(source => {
@@ -594,9 +614,19 @@ function renderNewsSources(story) {
       '<span class="news-source-publisher">' + escapeHtml(source.publisher) + '</span>' +
       '<span class="news-source-title">' + escapeHtml(source.title) + '</span>' +
       '</a>' + published +
-      '<span class="news-source-support">ადასტურებს: ' + escapeHtml(support) + '</span>' +
+      '<span class="news-source-support">წყაროში ნახავთ: ' + escapeHtml(support) + '</span>' +
       '</li>';
   }).join('');
+}
+
+function renderNewsNavigation(briefing) {
+  return briefing.stories.map(story =>
+    '<li><a href="#' + escapeHtml(story.id) + '">' +
+    '<span class="news-contents-number">' + story.importance + '</span>' +
+    '<span><strong>' + escapeHtml(story.headline) + '</strong>' +
+    '<small>' + escapeHtml(newsCategoryLabel(story.category)) + '</small></span>' +
+    '</a></li>'
+  ).join('');
 }
 
 function renderNewsStories(briefing) {
@@ -606,16 +636,17 @@ function renderNewsStories(briefing) {
         escapeHtml(formatGeorgianTimestamp(story.event_at)) + '</time></p>'
       : '';
     const uncertainty = story.uncertainty
-      ? '<div class="news-uncertainty"><h3>რა რჩება გაურკვეველი</h3><p>' + escapeHtml(story.uncertainty) + '</p></div>'
+      ? '<div class="news-uncertainty"><h3>რა რჩება დასაზუსტებელი</h3><p>' + escapeHtml(story.uncertainty) + '</p></div>'
       : '';
     return '<article class="news-story" id="' + escapeHtml(story.id) + '">' +
       '<header><div class="news-story-label"><span>' + story.importance + '</span>' +
-      escapeHtml(NEWS_CATEGORY_LABELS[story.category]) + '</div>' +
+      escapeHtml(newsCategoryLabel(story.category)) + '</div>' +
       '<h2>' + escapeHtml(story.headline) + '</h2>' + eventTime + '</header>' +
       '<div class="news-story-copy"><p>' + escapeHtml(story.summary) + '</p>' +
-      '<div class="news-why"><h3>რატომ არის მნიშვნელოვანი</h3><p>' + escapeHtml(story.why_it_matters) + '</p></div>' +
+      '<div class="news-why"><h3>რატომ უნდა მიაქციოთ ყურადღება</h3><p>' + escapeHtml(story.why_it_matters) + '</p></div>' +
       uncertainty + '</div>' +
       '<div class="news-sources"><h3>წყაროები</h3><ol>' + renderNewsSources(story) + '</ol></div>' +
+      '<a class="news-back-link" href="#news-contents-title">სარჩევში დაბრუნება <span aria-hidden="true">↑</span></a>' +
       '</article>';
   }).join('');
 }
@@ -668,20 +699,22 @@ function renderNewsBriefingPage(briefing, edition, options = {}) {
   const revisionHistoryHtml = edition.revisions.map(record => {
     const current = record.revision === briefing.revision ? ' aria-current="page"' : '';
     return '<li><a href="/news/' + edition.edition_date + '/revisions/' + record.revision + '/"' + current +
-      '>ვერსია ' + record.revision + '</a> · <time datetime="' + escapeHtml(record.generated_at) + '">' +
+      '>რედაქცია ' + record.revision + '</a> · <time datetime="' + escapeHtml(record.generated_at) + '">' +
       escapeHtml(formatGeorgianTimestamp(record.generated_at)) + '</time></li>';
   }).join('');
   const editionJsonUrl = `/news/data/${briefing.edition_date}/r${briefing.revision}.json`;
   return render(newsTemplate, {
-    editionHeading: `${formatGeorgianDate(briefing.edition_date)} — დღის მთავარი ამბები`,
+    editionHeading: `${formatGeorgianDate(briefing.edition_date)} — რაც დღეს უნდა იცოდეთ`,
     editionDate: briefing.edition_date,
     editionDateFormatted: formatGeorgianDate(briefing.edition_date),
-    coverageFormatted: `გაშუქება: ${formatCoverage(briefing.coverage)}`,
+    coverageFormatted: `პერიოდი: ${formatCoverage(briefing.coverage)}`,
     generatedFormatted: formatGeorgianTimestamp(briefing.generated_at),
     readingTime: Math.max(1, Math.round(newsWordCount(briefing) / 180)),
     isLatest: Boolean(options.isLatest),
     introduction: briefing.introduction,
     takeawaysHtml: briefing.takeaways.map(item => '<li>' + escapeHtml(item) + '</li>').join(''),
+    storiesNavHtml: renderNewsNavigation(briefing),
+    storyCount: briefing.stories.length,
     storiesHtml: renderNewsStories(briefing),
     coverageNote: briefing.coverage_note,
     editionJsonUrl,
@@ -694,20 +727,31 @@ function renderNewsBriefingPage(briefing, edition, options = {}) {
 function newsBaseData(briefing, canonical, options = {}) {
   const description = briefing
     ? briefing.introduction
-    : 'ყოველდღიური ქართული საღამოს მიმოხილვა პირდაპირი წყაროებით.';
+    : 'დღის მთავარი ამბები ქართულად — მოკლედ, გასაგებად და პირდაპირი წყაროებით.';
   return {
-    title: briefing ? `${formatGeorgianDate(briefing.edition_date)} — საღამოს მიმოხილვა` : 'საღამოს მიმოხილვა',
-    ogTitle: briefing ? `${formatGeorgianDate(briefing.edition_date)} — დღის ამბები` : 'საღამოს მიმოხილვა',
+    title: briefing ? `${formatGeorgianDate(briefing.edition_date)} — დღის მთავარი ამბები` : 'დღის მთავარი ამბები',
+    ogTitle: briefing ? `${formatGeorgianDate(briefing.edition_date)} — რაც დღეს უნდა იცოდეთ` : 'დღის მთავარი ამბები',
     description,
     canonical,
     ogType: briefing ? 'article' : 'website',
-    ogImage: '',
+    ogImage: `${BASE_URL}/images/news-social.jpg`,
+    ogImageType: 'image/jpeg',
+    ogImageAlt: 'თბილისის საღამოს პანორამა, სამუშაო მაგიდაზე გაშლილი გაზეთი და თბილი სანათი',
+    ogImageWidth: 1200,
+    ogImageHeight: 630,
     head: options.head || '',
     readingProgress: false,
     lang: 'ka',
     ogLocale: 'ka_GE',
     bodyClass: 'news-page',
-    skipLabel: 'შინაარსზე გადასვლა'
+    skipLabel: 'შინაარსზე გადასვლა',
+    primaryNavLabel: 'მთავარი მენიუ',
+    blogLabel: 'ბლოგი',
+    newsLabel: 'ამბები',
+    archiveLabel: 'სტატიები',
+    aboutLabel: 'ჩემ შესახებ',
+    themeLabel: 'მუქ ფერზე გადასვლა',
+    sourceLabel: 'კოდი'
   };
 }
 
@@ -907,11 +951,11 @@ writeFile(path.join(DIST_DIR, 'news', 'index.html'), latestNewsPage);
 
 const newsArchiveItems = newsEditions.map(edition => {
   const latestRevision = edition.revisions.find(record => record.revision === edition.latest_revision);
-  const revisionLabel = edition.latest_revision > 1 ? ` · შესწორება ${edition.latest_revision}` : '';
+  const revisionLabel = edition.latest_revision > 1 ? ` · რედაქცია ${edition.latest_revision}` : '';
   return '<li><a href="/news/' + edition.edition_date + '/"><time datetime="' + edition.edition_date + '">' +
     escapeHtml(formatGeorgianDate(edition.edition_date)) + '</time><span>' +
     escapeHtml(latestRevision.briefing.introduction) + '</span><small>' +
-    latestRevision.briefing.stories.length + ' ამბავი · ' +
+    latestRevision.briefing.stories.length + ' ამბავი · დაახლოებით ' +
     Math.max(1, Math.round(newsWordCount(latestRevision.briefing) / 180)) + ' წუთი' + revisionLabel +
     '</small></a></li>';
 }).join('');

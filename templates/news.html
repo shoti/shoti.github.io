@@ -1,45 +1,58 @@
-<article class="news-briefing">
+<article class="news-briefing" id="briefing-start">
   <header class="news-masthead">
-    <div class="news-kicker">საღამოს მიმოხილვა</div>
+    <div class="news-kicker">დღის ამბები</div>
     <h1>{{editionHeading}}</h1>
     <div class="news-edition-meta">
       <time datetime="{{editionDate}}">{{editionDateFormatted}}</time>
       <span>{{coverageFormatted}}</span>
-      <span>{{readingTime}} წუთი</span>
+      <span>დაახლოებით {{readingTime}} წუთი</span>
     </div>
-    {{#if isLatest}}<p class="news-latest-note">უახლესი გამოშვება · გამოქვეყნებულია {{generatedFormatted}}</p>{{/if}}
+    {{#if isLatest}}<p class="news-latest-note">ბოლო გამოშვება · განახლება: {{generatedFormatted}}</p>{{/if}}
+    <nav class="news-reading-paths" aria-label="როგორ წავიკითხოთ">
+      <a href="#news-overview-title"><strong>1 წუთი</strong><span>მხოლოდ მთავარი</span></a>
+      <a href="#news-stories-title"><strong>{{readingTime}} წუთი</strong><span>სრული მიმოხილვა</span></a>
+      <a href="/news/archive/"><strong>არქივი</strong><span>წინა დღეები</span></a>
+    </nav>
   </header>
 
   <section class="news-overview" aria-labelledby="news-overview-title">
-    <h2 id="news-overview-title">მოკლედ</h2>
+    <div class="news-section-label">თუ მხოლოდ ერთი წუთი გაქვთ</div>
+    <h2 id="news-overview-title">დღე მოკლედ</h2>
     <p class="news-introduction">{{introduction}}</p>
     <ul class="news-takeaways">
       {{{takeawaysHtml}}}
     </ul>
   </section>
 
-  <div class="news-stories">
+  <nav class="news-contents" aria-labelledby="news-contents-title">
+    <div class="news-section-label">{{storyCount}} შერჩეული ამბავი</div>
+    <h2 id="news-contents-title">ამ გამოშვებაში</h2>
+    <ol>{{{storiesNavHtml}}}</ol>
+  </nav>
+
+  <section class="news-stories" aria-labelledby="news-stories-title">
+    <h2 class="news-stories-title" id="news-stories-title">მთავარი ამბები</h2>
     {{{storiesHtml}}}
-  </div>
+  </section>
 
   {{#if coverageNote}}
-  <aside class="news-coverage-note" aria-label="გაშუქების შენიშვნა">
-    <strong>გაშუქების შენიშვნა</strong>
+  <aside class="news-coverage-note" aria-label="რა ვერ მოვიცავით სრულად">
+    <strong>რა ვერ მოვიცავით სრულად</strong>
     <p>{{coverageNote}}</p>
   </aside>
   {{/if}}
 
   <footer class="news-disclosure">
-    <p>მიმოხილვა მომზადებულია AI-ის დახმარებით და გადის სტრუქტურულ შემოწმებას. ფაქტების გადასამოწმებლად გამოიყენეთ თითოეულ ამბავთან მითითებული პირდაპირი წყაროები.</p>
-    <nav aria-label="გამოშვების ბმულები">
+    <p>მიმოხილვა წყაროებზე დაყრდნობით, AI-ის დახმარებით მომზადდა და ტექნიკური შემოწმება გაიარა. ყველა ამბავს ახლავს პირდაპირი ბმული, რათა მნიშვნელოვანი დეტალები თავადაც გადაამოწმოთ.</p>
+    <nav aria-label="დამატებითი ბმულები">
       <a href="/news/archive/">წინა გამოშვებები</a>
-      <a href="{{editionJsonUrl}}">ამ გამოშვების JSON</a>
+      <a href="{{editionJsonUrl}}">მონაცემები JSON-ად</a>
     </nav>
   </footer>
 
   {{#if revisionHistory}}
   <details class="news-revisions">
-    <summary>შესწორებების ისტორია ({{revisionCount}})</summary>
+    <summary>განახლებების ისტორია ({{revisionCount}})</summary>
     <ol>{{{revisionHistoryHtml}}}</ol>
   </details>
   {{/if}}
