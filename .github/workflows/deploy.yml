@@ -3,32 +3,101 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  issues:
+    types: [opened, edited]
 
 permissions:
-  contents: read
+  contents: write
+  issues: write
   pages: write
   id-token: write
 
-concurrency:
-  group: pages
-  cancel-in-progress: true
-
 jobs:
-  build-and-deploy:
+  authorize-news:
+    if: github.event_name == 'issues' && startsWith(github.event.issue.title, '[news]')
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - run: npm test
+      - name: Authenticate sender and record the exact payload
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEWS_ALLOWED_SENDERS: ${{ vars.NEWS_ALLOWED_SENDERS }}
+          NEWS_EVENT_PATH: ${{ github.event_path }}
+        run: |
+          node scripts/extract-news-issue.js "$NEWS_EVENT_PATH" "$RUNNER_TEMP/briefing.json"
+          node scripts/record-news-authorization.js "$NEWS_EVENT_PATH"
 
-      - run: npm run build
+  build-and-deploy:
+    needs: authorize-news
+    if: always() && (github.event_name == 'push' || needs.authorize-news.result == 'success')
+    runs-on: ubuntu-latest
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Collect the durable authorized issue queue
+        id: queue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NEWS_ALLOWED_SENDERS: ${{ vars.NEWS_ALLOWED_SENDERS }}
+        run: |
+          if [ -z "$NEWS_ALLOWED_SENDERS" ]; then
+            mkdir -p "$RUNNER_TEMP/news-payloads"
+            echo '[]' > "$RUNNER_TEMP/news-payloads/manifest.json"
+            echo "has_news=false" >> "$GITHUB_OUTPUT"
+          else
+            gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/issues?state=open&per_page=100" > "$RUNNER_TEMP/news-issues.json"
+            gh api --paginate --slurp "repos/${GITHUB_REPOSITORY}/issues/comments?per_page=100" > "$RUNNER_TEMP/news-comments.json"
+            node scripts/collect-news-issues.js "$RUNNER_TEMP/news-issues.json" "$RUNNER_TEMP/news-comments.json" "$RUNNER_TEMP/news-payloads" --allow-empty
+            node -e "process.exit(require(process.argv[1]).length ? 0 : 1)" "$RUNNER_TEMP/news-payloads/manifest.json" \
+              && echo "has_news=true" >> "$GITHUB_OUTPUT" \
+              || echo "has_news=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Import queued editions and build complete site
+        if: steps.queue.outputs.has_news == 'true'
+        run: npm run news:publish -- --manifest "$RUNNER_TEMP/news-payloads/manifest.json"
+
+      - name: Run regression tests
+        run: npm test
+
+      - name: Build complete site without a queued edition
+        if: steps.queue.outputs.has_news != 'true'
+        run: npm run build
+
+      - name: Check generated source changes
+        run: git diff --check
+
+      - name: Commit validated editions
+        if: steps.queue.outputs.has_news == 'true'
+        run: |
+          git add -- news/data news/index.json
+          if ! git diff --cached --quiet; then
+            git diff --cached --check
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "Publish validated news briefing"
+            git push origin HEAD:main
+          fi
 
       - uses: actions/configure-pages@v5
 
@@ -38,3 +107,9 @@ jobs:
 
       - id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Close unchanged, successfully published intake issues
+        if: steps.queue.outputs.has_news == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/close-news-issues.js "$RUNNER_TEMP/news-payloads/manifest.json"

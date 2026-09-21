@@ -5,7 +5,10 @@
   "scripts": {
     "build": "node build.js",
     "new": "node build.js new",
-    "test": "node test/build.test.js && node test/client.test.js"
+    "news:check": "node scripts/import-news.js --check",
+    "news:import": "node scripts/import-news.js",
+    "news:publish": "node scripts/publish-news.js",
+    "test": "node test/build.test.js && node test/client.test.js && node test/news.test.js"
   },
   "author": "Shota Mtvarelishvili <mtvarelishvili@proton.me>",
   "license": "MIT"

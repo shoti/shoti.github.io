@@ -1,0 +1,12 @@
+<section class="news-archive" lang="ka">
+  <div class="news-kicker">არქივი</div>
+  <h1>საღამოს მიმოხილვები</h1>
+  {{#if hasEditions}}
+  <ol class="news-archive-list">
+    {{{editionsHtml}}}
+  </ol>
+  {{/if}}
+  {{#if isEmpty}}
+  <p class="news-archive-empty">გამოშვებები ჯერ არ არის. არქივი პირველი წარმატებული გამოქვეყნების შემდეგ შეივსება.</p>
+  {{/if}}
+</section>
