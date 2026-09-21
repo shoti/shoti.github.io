@@ -1,13 +1,12 @@
 <article class="news-briefing" id="briefing-start">
   <header class="news-masthead">
     <div class="news-kicker">დღის ამბები</div>
-    <h1>{{editionHeading}}</h1>
+    <h1><time datetime="{{editionDate}}">{{editionHeading}}</time></h1>
     <div class="news-edition-meta">
-      <time datetime="{{editionDate}}">{{editionDateFormatted}}</time>
       <span>{{coverageFormatted}}</span>
       <span>დაახლოებით {{readingTime}} წუთი</span>
     </div>
-    {{#if isLatest}}<p class="news-latest-note">ბოლო გამოშვება · განახლება: {{generatedFormatted}}</p>{{/if}}
+    {{#if isLatest}}<p class="news-latest-note">განახლება: {{generatedFormatted}}</p>{{/if}}
     <nav class="news-reading-paths" aria-label="როგორ წავიკითხოთ">
       <a href="#news-overview-title"><strong>1 წუთი</strong><span>მხოლოდ მთავარი</span></a>
       <a href="#news-stories-title"><strong>{{readingTime}} წუთი</strong><span>სრული მიმოხილვა</span></a>
