@@ -826,14 +826,6 @@ body.news-page {
   --muted: #aaa79d;
 }
 
-.news-page .site-header,
-.news-page .site-footer,
-.news-page .site-nav,
-.news-page .site-name,
-.news-page .site-tagline {
-  font-family: 'Noto Sans Georgian', var(--font-heading);
-}
-
 .news-briefing,
 .news-empty,
 .news-archive {
@@ -877,11 +869,6 @@ body.news-page {
   font-family: 'Noto Sans Georgian', var(--font-heading);
   font-size: 0.77rem;
   line-height: 1.5;
-}
-
-.news-edition-meta time {
-  color: var(--text);
-  font-weight: 600;
 }
 
 .news-latest-note {
@@ -1441,20 +1428,14 @@ body.news-page {
 
   .news-reading-paths {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .news-reading-paths a {
-    padding-right: 0.55rem;
-    padding-left: 0.55rem;
-  }
-
-  .news-reading-paths a:nth-child(3) {
-    display: flex;
-    grid-column: 1 / -1;
-    gap: 0.5rem;
-    border-top: 1px solid var(--border);
-    border-left: 0;
+    align-content: center;
+    min-height: 3.75rem;
+    padding: 0.25rem 0.35rem;
+    text-align: center;
   }
 
   .news-reading-paths strong {

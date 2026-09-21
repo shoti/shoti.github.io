@@ -704,9 +704,8 @@ function renderNewsBriefingPage(briefing, edition, options = {}) {
   }).join('');
   const editionJsonUrl = `/news/data/${briefing.edition_date}/r${briefing.revision}.json`;
   return render(newsTemplate, {
-    editionHeading: `${formatGeorgianDate(briefing.edition_date)} — რაც დღეს უნდა იცოდეთ`,
+    editionHeading: formatGeorgianDate(briefing.edition_date),
     editionDate: briefing.edition_date,
-    editionDateFormatted: formatGeorgianDate(briefing.edition_date),
     coverageFormatted: `პერიოდი: ${formatCoverage(briefing.coverage)}`,
     generatedFormatted: formatGeorgianTimestamp(briefing.generated_at),
     readingTime: Math.max(1, Math.round(newsWordCount(briefing) / 180)),
@@ -730,7 +729,7 @@ function newsBaseData(briefing, canonical, options = {}) {
     : 'დღის მთავარი ამბები ქართულად — მოკლედ, გასაგებად და პირდაპირი წყაროებით.';
   return {
     title: briefing ? `${formatGeorgianDate(briefing.edition_date)} — დღის მთავარი ამბები` : 'დღის მთავარი ამბები',
-    ogTitle: briefing ? `${formatGeorgianDate(briefing.edition_date)} — რაც დღეს უნდა იცოდეთ` : 'დღის მთავარი ამბები',
+    ogTitle: briefing ? `${formatGeorgianDate(briefing.edition_date)} — დღის ამბები` : 'დღის მთავარი ამბები',
     description,
     canonical,
     ogType: briefing ? 'article' : 'website',
@@ -743,15 +742,7 @@ function newsBaseData(briefing, canonical, options = {}) {
     readingProgress: false,
     lang: 'ka',
     ogLocale: 'ka_GE',
-    bodyClass: 'news-page',
-    skipLabel: 'შინაარსზე გადასვლა',
-    primaryNavLabel: 'მთავარი მენიუ',
-    blogLabel: 'ბლოგი',
-    newsLabel: 'ამბები',
-    archiveLabel: 'სტატიები',
-    aboutLabel: 'ჩემ შესახებ',
-    themeLabel: 'მუქ ფერზე გადასვლა',
-    sourceLabel: 'კოდი'
+    bodyClass: 'news-page'
   };
 }
 

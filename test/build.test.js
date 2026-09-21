@@ -158,10 +158,18 @@ assert.match(news, /<meta property="og:image:type" content="image\/jpeg">/);
 assert.match(news, /<meta property="og:image:width" content="1200">/);
 assert.match(news, /<meta property="og:image:height" content="630">/);
 assert.match(news, /<meta name="twitter:image" content="https:\/\/shoti\.github\.io\/images\/news-social\.jpg">/);
+assert.match(news, /<nav class="site-nav" aria-label="Primary">/);
+assert.match(news, /<a href="\/">Blog<\/a>/);
+assert.match(news, /<a href="\/news\/">News<\/a>/);
+assert.match(news, /<a href="\/archive\/">Archive<\/a>/);
+assert.match(news, /<a href="\/about\/">About<\/a>/);
+assert.match(news, /github\.com\/shoti\/shoti\.github\.io">Source<\/a>/);
 if (newsIndex.latest === null) {
   assert.match(news, /პირველი მიმოხილვა ჯერ მზად არ არის/);
 } else {
-  assert.match(news, new RegExp(`<time datetime="${newsIndex.latest.edition_date}">`));
+  assert.match(news, new RegExp(`<h1><time datetime="${newsIndex.latest.edition_date}">[^<]+<\\/time><\\/h1>`));
+  assert.match(news, /<p class="news-latest-note">განახლება: /);
+  assert.doesNotMatch(news, /რაც დღეს უნდა იცოდეთ|ბოლო გამოშვება/);
 }
 assert.match(newsArchive, /<link rel="canonical" href="https:\/\/shoti\.github\.io\/news\/archive\/">/);
 assert.ok(fs.existsSync(path.join(distDir, 'news', 'schema', 'briefing-1.0.json')));

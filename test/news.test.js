@@ -27,6 +27,13 @@ const { payloadDigest, recordAuthorization } = require('../scripts/record-news-a
 const repositoryRoot = path.join(__dirname, '..');
 const examplePath = path.join(repositoryRoot, 'news', 'examples', 'briefing.example.json');
 const fixture = readJson(examplePath, 'fictional news fixture');
+const taskPrompt = fs.readFileSync(path.join(repositoryRoot, 'news', 'CHATGPT_TASK_PROMPT.md'), 'utf8');
+
+assert.match(taskPrompt, /especially demanding, constructive scrutiny to Georgia's current ruling/);
+assert.match(taskPrompt, /those\s+who hold state power deserve the closest accountability reporting/);
+assert.match(taskPrompt, /reasonable classical-liberal or libertarian perspective/);
+assert.match(taskPrompt, /do not let the perspective outrun the facts/);
+assert.match(taskPrompt, /A little dry, gentle humor is welcome/);
 
 assert.doesNotThrow(() => validateBriefing(structuredClone(fixture)));
 assert.strictEqual(localDate('2026-09-20T19:59:59Z'), '2026-09-20');
