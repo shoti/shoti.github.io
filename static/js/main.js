@@ -234,11 +234,14 @@ function adjacentStoryIndex(currentIndex, direction, length) {
   return Math.min(length - 1, Math.max(0, base + direction));
 }
 
-// Among intersection entries, the "active" story is the topmost one still on screen.
+// Among intersection entries, the "active" story is the one most recently scrolled into —
+// i.e. the largest top still counts as intersecting, not the smallest. A story you've
+// mostly scrolled past keeps a deeply negative top while still barely intersecting, and
+// must not outrank a story that just entered with a top near zero.
 function pickClosestIntersecting(entries) {
   const visible = entries.filter(entry => entry.isIntersecting);
   if (!visible.length) return null;
-  return visible.reduce((a, b) => (a.top <= b.top ? a : b)).id;
+  return visible.reduce((a, b) => (a.top >= b.top ? a : b)).id;
 }
 
 if (typeof document !== 'undefined') {

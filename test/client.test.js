@@ -264,7 +264,13 @@ assert.strictEqual(pickClosestIntersecting([
   { id: 'a', top: 300, isIntersecting: true },
   { id: 'b', top: -50, isIntersecting: true },
   { id: 'c', top: 900, isIntersecting: false }
-]), 'b');
+]), 'a');
+// A story mostly scrolled past keeps a deeply negative top while its tail end still
+// barely intersects; it must not outrank a story that just entered near the top.
+assert.strictEqual(pickClosestIntersecting([
+  { id: 'outgoing', top: -820, isIntersecting: true },
+  { id: 'incoming', top: 45, isIntersecting: true }
+]), 'incoming');
 assert.strictEqual(pickClosestIntersecting([
   { id: 'a', top: 300, isIntersecting: false }
 ]), null);
