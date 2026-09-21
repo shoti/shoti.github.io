@@ -139,9 +139,11 @@ assert.ok(themeBootstrapIndex !== -1 && themeBootstrapIndex < stylesheetIndex,
 assert.ok(readerBootstrapIndex !== -1 && readerBootstrapIndex < stylesheetIndex,
   'Stored reader preferences must be applied before the stylesheet to prevent a typography flash');
 assert.match(home, /<a class="skip-link" href="#main-content">Skip to content<\/a>/);
+assert.doesNotMatch(home, /<meta property="og:image:(?:type|width|height|alt)" content="">/);
 assert.match(home, /<main id="main-content">\s*<h1 class="intro">/);
 assert.doesNotMatch(home, /&lt;h1 class=&quot;intro&quot;/);
 assert.match(post, /<span class="reading-time">\d+ min read<\/span>/);
+assert.doesNotMatch(post, /<meta property="og:image:(?:type|width|height|alt)" content="">/);
 assert.match(post, /role="progressbar" aria-label="Reading progress"/);
 assert.match(post, /<details class="reader-settings">/);
 assert.match(post, /<details class="post-toc" id="post-toc" hidden>/);
@@ -151,8 +153,13 @@ assert.doesNotMatch(post, /\{\{\{?[\w#/ ]+\}?\}\}/);
 assert.match(notFound, /<a href="\/">Go back to the blog<\/a>/);
 assert.match(news, /<html lang="ka">/);
 assert.match(news, /<link rel="canonical" href="https:\/\/shoti\.github\.io\/news\/">/);
+assert.match(news, /<meta property="og:image" content="https:\/\/shoti\.github\.io\/images\/news-social\.jpg">/);
+assert.match(news, /<meta property="og:image:type" content="image\/jpeg">/);
+assert.match(news, /<meta property="og:image:width" content="1200">/);
+assert.match(news, /<meta property="og:image:height" content="630">/);
+assert.match(news, /<meta name="twitter:image" content="https:\/\/shoti\.github\.io\/images\/news-social\.jpg">/);
 if (newsIndex.latest === null) {
-  assert.match(news, /პირველი გადამოწმებული ქართული მიმოხილვა ჯერ არ გამოქვეყნებულა/);
+  assert.match(news, /პირველი მიმოხილვა ჯერ მზად არ არის/);
 } else {
   assert.match(news, new RegExp(`<time datetime="${newsIndex.latest.edition_date}">`));
 }

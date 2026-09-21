@@ -1,31 +1,5 @@
 {
   "schema_version": 1,
-  "latest": {
-    "edition_date": "2026-09-21",
-    "revision": 2,
-    "path": "data/2026-09-21/r2.json",
-    "briefing_id": "2026-09-21-evening",
-    "generated_at": "2026-09-21T20:43:30+04:00"
-  },
-  "editions": [
-    {
-      "edition_date": "2026-09-21",
-      "briefing_id": "2026-09-21-evening",
-      "latest_revision": 2,
-      "revisions": [
-        {
-          "revision": 1,
-          "path": "data/2026-09-21/r1.json",
-          "briefing_id": "2026-09-21-evening",
-          "generated_at": "2026-09-21T19:57:26+04:00"
-        },
-        {
-          "revision": 2,
-          "path": "data/2026-09-21/r2.json",
-          "briefing_id": "2026-09-21-evening",
-          "generated_at": "2026-09-21T20:43:30+04:00"
-        }
-      ]
-    }
-  ]
+  "latest": null,
+  "editions": []
 }
