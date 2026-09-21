@@ -128,6 +128,14 @@ The production connection was verified on 2026-09-21:
   deployed the dated page, and closed the unchanged intake issue;
 - the active ChatGPT task runs daily at **20:00 Asia/Tbilisi**.
 
+The existing task stores a short loader. The task editor returned “Failed to
+save task” for the full editorial prompt; the short loader saved successfully.
+On each run, it reads `news/CHATGPT_TASK_PROMPT.md` from `main`, checks that
+the expected complete version is present, and follows the instructions below
+the `---` separator.
+It must not submit an issue if the file is unavailable or outdated. Changes to
+the prompt therefore take effect only after they are merged into `main`.
+
 If the connection is ever replaced, repeat the disposable issue test before
 changing `NEWS_ALLOWED_SENDERS`. Use the exact observed GitHub author login,
 including any `[bot]` suffix, keep the GitHub App scoped to this repository, and
