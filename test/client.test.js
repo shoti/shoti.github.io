@@ -5,6 +5,7 @@ const {
   adjacentStoryIndex,
   applyReaderPreferences,
   calculateReadingProgress,
+  clearStoredTheme,
   createTableOfContentsEntries,
   createFrameScheduler,
   dismissReaderSettings,
@@ -16,6 +17,7 @@ const {
   readReaderPreferences,
   readStoredTheme,
   readerControlState,
+  revealContentsLink,
   resolveTheme,
   shouldDismissReaderSettings,
   slugifyHeading,
@@ -28,8 +30,11 @@ const {
 } = require('../static/js/main');
 
 assert.strictEqual(readStoredTheme(() => ({ getItem: () => 'dark' })), 'dark');
-assert.strictEqual(themeControlState('dark', 'ka').label, 'ღია ფერზე გადასვლა');
-assert.strictEqual(themeControlState('light', 'ka').label, 'მუქ ფერზე გადასვლა');
+assert.strictEqual(themeControlState('dark', 'ka').label, 'ღია ფონზე გადასვლა');
+assert.strictEqual(themeControlState('light', 'ka').label, 'მუქ ფონზე გადასვლა');
+// The news appearance control is a labelled button, so it needs visible text too.
+assert.strictEqual(themeControlState('dark', 'ka').text, 'ღია ფონი');
+assert.strictEqual(themeControlState('light', 'ka').text, 'მუქი ფონი');
 assert.strictEqual(readStoredTheme(() => ({ getItem: () => 'unexpected' })), null);
 assert.strictEqual(readStoredTheme(() => { throw new Error('storage blocked'); }), null);
 assert.strictEqual(readStoredTheme(() => ({ getItem: () => { throw new Error('read blocked'); } })), null);
@@ -43,6 +48,11 @@ assert.strictEqual(writeStoredTheme('light', () => ({
 })), true);
 assert.strictEqual(writtenTheme, 'light');
 assert.strictEqual(writeStoredTheme('dark', () => { throw new Error('storage blocked'); }), false);
+let clearedTheme = null;
+assert.strictEqual(clearStoredTheme(() => ({ removeItem: key => { clearedTheme = key; } })), true);
+assert.strictEqual(clearedTheme, 'theme');
+assert.strictEqual(clearStoredTheme(() => { throw new Error('storage blocked'); }), false);
+assert.strictEqual(clearStoredTheme(() => ({ removeItem: () => { throw new Error('write blocked'); } })), false);
 
 assert.deepStrictEqual(normalizeReaderPreferences({
   font: 'sans',
@@ -180,10 +190,12 @@ assert.strictEqual(resolveTheme('light', true), 'light');
 assert.strictEqual(resolveTheme(null, true), 'dark');
 assert.deepStrictEqual(themeControlState('dark'), {
   label: 'Switch to light mode',
+  text: 'Light',
   pressed: 'true'
 });
 assert.deepStrictEqual(themeControlState('light'), {
   label: 'Switch to dark mode',
+  text: 'Dark',
   pressed: 'false'
 });
 
@@ -275,5 +287,26 @@ assert.strictEqual(pickClosestIntersecting([
   { id: 'a', top: 300, isIntersecting: false }
 ]), null);
 assert.strictEqual(pickClosestIntersecting([]), null);
+
+// Reveal a current contents entry by moving only the sidebar's scroll position.
+const contents = {
+  open: true, clientHeight: 300, clientTop: 1, scrollTop: 200,
+  getBoundingClientRect: () => ({ top: 60 })
+};
+const contentsEntry = (top, height) => ({
+  getBoundingClientRect: () => ({ top, bottom: top + height, height })
+});
+revealContentsLink(contents, contentsEntry(100, 60));
+assert.strictEqual(contents.scrollTop, 200, 'An already visible entry must not move');
+revealContentsLink(contents, contentsEntry(320, 80));
+assert.strictEqual(contents.scrollTop, 239, 'Reveal the bottom of an entry below the viewport');
+revealContentsLink(contents, contentsEntry(40, 80));
+assert.strictEqual(contents.scrollTop, 218, 'Reveal the top of an entry above the viewport');
+revealContentsLink(contents, contentsEntry(100, 400));
+assert.strictEqual(contents.scrollTop, 257, 'An oversized entry aligns to its start');
+contents.open = false;
+revealContentsLink(contents, contentsEntry(500, 80));
+assert.strictEqual(contents.scrollTop, 257, 'Do not scroll collapsed mobile contents');
+assert.doesNotThrow(() => revealContentsLink(null, null));
 
 console.log('Client tests passed');

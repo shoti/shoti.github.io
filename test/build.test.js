@@ -58,7 +58,7 @@ assert.throws(() => render('{{#if enabled}}broken', { enabled: true }), /Unclose
 // Orientation banners keep an older edition or revision from being mistaken for today's news.
 const archivedBanner = renderNewsOrientationBanner('archived', { dateFormatted: '20 <script> სექტემბერი, 2026' });
 assert.match(archivedBanner, /20 &lt;script&gt; სექტემბერი, 2026/);
-assert.match(archivedBanner, /<a href="\/news\/">დღევანდელი გამოშვების ნახვა/);
+assert.match(archivedBanner, /<a href="\/news\/">უახლესი გამოშვების ნახვა/);
 const revisionBanner = renderNewsOrientationBanner('revision', {
   dateFormatted: '20 სექტემბერი, 2026',
   editionDate: '2026-09-20',
@@ -167,7 +167,15 @@ assert.match(post, /<h2 id="section-[a-z0-9-]+">/);
 assert.doesNotMatch(post, /\{\{\{?[\w#/ ]+\}?\}\}/);
 assert.match(notFound, /<a href="\/">Go back to the blog<\/a>/);
 assert.match(news, /<html lang="ka">/);
-assert.match(news, /<link rel="canonical" href="https:\/\/shoti\.github\.io\/news\/">/);
+// /news/ serves the newest dated edition, so it points
+// its canonical at that permanent URL rather than competing with it.
+if (newsIndex.latest === null) {
+  assert.match(news, /<link rel="canonical" href="https:\/\/shoti\.github\.io\/news\/">/);
+} else {
+  assert.match(news, new RegExp(
+    `<link rel="canonical" href="https://shoti\\.github\\.io/news/${newsIndex.latest.edition_date}/">`
+  ));
+}
 assert.match(news, /<meta property="og:image" content="https:\/\/shoti\.github\.io\/images\/news-social\.jpg">/);
 assert.match(news, /<meta property="og:image:type" content="image\/jpeg">/);
 assert.match(news, /<meta property="og:image:width" content="1200">/);
@@ -179,26 +187,90 @@ assert.doesNotMatch(news, /<nav class="site-nav"/);
 assert.match(news, /<div class="news-chrome">/);
 assert.match(news, /<a class="news-chrome-home" href="\/news\/">/);
 assert.match(news, /<a class="news-chrome-archive" href="\/news\/archive\/">/);
-// News is dark-only — no theme toggle, no light-mode branching.
+// News has its own localised appearance control, separate from blog chrome.
 assert.doesNotMatch(news, /id="theme-toggle"/);
-assert.match(news, /github\.com\/shoti\/shoti\.github\.io">Source<\/a>/);
-assert.match(news, /<p>© 2026 Shota Mtvarelishvili · <a href="mailto:mtvarelishvili@proton\.me">mtvarelishvili@proton\.me<\/a> · <a href="https:\/\/github\.com\/shoti\/shoti\.github\.io">Source<\/a><\/p>/);
+assert.match(news, /id="news-theme-toggle"/);
+assert.match(news, /<details class="reader-settings news-reading-settings">/);
+assert.match(news, /<summary aria-label="კითხვის პარამეტრები">/);
+assert.match(news, /<output id="reader-size-value" aria-live="polite">100%<\/output>/);
+assert.match(news, /data-reader-font="sans"/);
+assert.match(news, /data-reader-spacing="relaxed"/);
+assert.match(news, /id="reader-reset" data-reset-theme/);
+// News chrome is fully localised, including the shared footer label.
+assert.match(news, /github\.com\/shoti\/shoti\.github\.io">საიტის კოდი<\/a>/);
+assert.doesNotMatch(news, />Source<\/a>/);
+assert.match(home, /<p>© 2026 Shota Mtvarelishvili · <a href="mailto:mtvarelishvili@proton\.me">mtvarelishvili@proton\.me<\/a> · <a href="https:\/\/github\.com\/shoti\/shoti\.github\.io">Source<\/a><\/p>/);
 if (newsIndex.latest === null) {
-  assert.match(news, /პირველი მიმოხილვა ჯერ მზად არ არის/);
+  assert.match(news, /პირველი გამოშვება ჯერ არ გამოქვეყნებულა/);
+  assert.match(news, /href="\/news\/rss.xml">RSS-ით გამოწერა/);
+  assert.doesNotMatch(news, /class="news-chrome-contents"/);
 } else {
+  const latestBriefing = JSON.parse(fs.readFileSync(
+    path.join(__dirname, '..', 'news', newsIndex.latest.path), 'utf8'
+  ));
   assert.match(news, new RegExp(`<h1><time datetime="${newsIndex.latest.edition_date}">[^<]+<\\/time><\\/h1>`));
-  assert.match(news, /<p class="news-latest-note">განახლება: /);
+  assert.match(news, /განახლდა /);
   assert.match(news, /<span class="news-issue">#\d+<\/span>/);
   assert.doesNotMatch(news, /რაც დღეს უნდა იცოდეთ|ბოლო გამოშვება/);
-  assert.match(news, /role="progressbar" aria-label="Reading progress"/);
-  const latestBriefing = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'news', newsIndex.latest.path), 'utf8'));
-  if (latestBriefing.stories.length > 1) {
-    assert.match(news, /<nav class="news-rail" aria-label="ამბების სია">/);
-    assert.match(news, /<p class="news-shortcuts-hint">/);
-    assert.match(news, /<a class="news-story-nav-next" href="#/);
+  assert.match(news, /role="progressbar" aria-label="კითხვის პროგრესი"/);
+
+  // The contents are the single navigation contract: reachable from the sticky
+  // bar at every width, and shipped open so the list is complete without JS.
+  assert.match(news, /<a class="news-chrome-contents" href="#news-contents">სარჩევი<\/a>/);
+  assert.match(news, /<details class="news-contents" id="news-contents" open>/);
+  assert.doesNotMatch(news, /news-story-nav|news-rail|news-shortcuts-hint/);
+
+  // Every source keeps a visible link; the citation apparatus is one
+  // disclosure away rather than a framed panel per story.
+  assert.match(news, /<ul class="news-source-links">/);
+  assert.match(news, /<details class="news-source-detail"><summary>ციტირების დეტალები<\/summary>/);
+  assert.doesNotMatch(news, /target="_blank"/);
+
+  // Context and uncertainty read as prose, not as nested boxes.
+  assert.match(news, /<p class="news-story-context"><b class="news-inline-label">/);
+  assert.doesNotMatch(news, /news-why|news-frontpage/);
+
+  // One lead treatment and one regular treatment.
+  assert.strictEqual((news.match(/class="news-story news-story-lead"/g) || []).length, 1);
+  assert.strictEqual((news.match(/class="news-story news-story-regular"/g) || []).length,
+    latestBriefing.stories.length - 1);
+  assert.doesNotMatch(news, /news-story-(major|standard|brief)/);
+
+  // A shared story must retain its edition when /news/ advances to another day.
+  for (const story of latestBriefing.stories) {
+    assert.ok(news.includes('class="news-story-permalink" href="/news/' +
+      latestBriefing.edition_date + '/#' + story.id + '"'));
   }
 }
+// A static page outlives the day it was built, so the newest edition is
+// "latest", never "today".
+if (newsIndex.latest) assert.match(newsArchive, /უახლესი გამოშვება/);
+else assert.doesNotMatch(newsArchive, /უახლესი გამოშვება/);
+assert.doesNotMatch(newsArchive, /დღევანდელი/);
 assert.match(newsArchive, /<link rel="canonical" href="https:\/\/shoti\.github\.io\/news\/archive\/">/);
+assert.match(newsArchive, /<title>არქივი — დღის ამბები<\/title>/);
+assert.match(newsArchive, /"@type":"CollectionPage"/);
+assert.match(newsArchive, /"@type":"BreadcrumbList"/);
+
+// Search snippets are cut around 160 characters; descriptions must not run long.
+for (const [label, page] of [['news', news], ['news archive', newsArchive]]) {
+  const description = page.match(/<meta name="description" content="([^"]*)">/);
+  assert.ok(description, `${label} page is missing a meta description`);
+  assert.ok(description[1].length <= 160,
+    `${label} meta description is ${description[1].length} characters, over the 160 limit`);
+}
+
+// A briefing that publishes daily needs a feed readers can actually subscribe to.
+const newsFeed = fs.readFileSync(path.join(distDir, 'news', 'rss.xml'), 'utf8');
+assert.match(newsFeed, /<language>ka<\/language>/);
+assert.match(newsFeed, /<atom:link href="https:\/\/shoti\.github\.io\/news\/rss\.xml"/);
+assert.match(news, /<link rel="alternate" type="application\/rss\+xml" title="დღის ამბები[^"]*" href="\/news\/rss\.xml">/);
+assert.match(home, /<link rel="alternate" type="application\/rss\+xml" title="Shota Mtvarelishvili" href="\/rss\.xml">/);
+
+// Superseded revisions stay reachable for readers but out of the index, and the
+// sitemap must not advertise a URL whose canonical points somewhere else.
+const sitemap = fs.readFileSync(path.join(distDir, 'sitemap.xml'), 'utf8');
+assert.doesNotMatch(sitemap, /<loc>https:\/\/shoti\.github\.io\/news\/<\/loc>/);
 assert.doesNotMatch(newsArchive, /<header class="site-header">/);
 assert.match(newsArchive, /<div class="news-chrome">/);
 // The rest of the site keeps its shared header and navigation untouched.

@@ -432,8 +432,16 @@ try {
     latest: null,
     editions: []
   }, null, 2) + '\n');
+  // The build suite must work for valid empty and single-story editions too,
+  // without depending on the topics or story count of today's published data.
+  const emptyBuild = spawnSync(process.execPath, ['test/build.test.js'], { cwd: buildRoot, encoding: 'utf8' });
+  assert.strictEqual(emptyBuild.status, 0, emptyBuild.stderr || emptyBuild.stdout);
   const copiedFixture = readJson(path.join(buildRoot, 'news', 'examples', 'briefing.example.json'));
+  copiedFixture.stories[0].category = 'education';
   applyImportPlan(planImport(buildRoot, copiedFixture));
+  const singleBuild = spawnSync(process.execPath, ['test/build.test.js'], { cwd: buildRoot, encoding: 'utf8' });
+  assert.strictEqual(singleBuild.status, 0, singleBuild.stderr || singleBuild.stdout);
+  assert.match(fs.readFileSync(path.join(buildRoot, 'dist', 'news', 'index.html'), 'utf8'), /განათლება/);
   const correction = structuredClone(copiedFixture);
   correction.revision = 2;
   correction.corrects_revision = 1;
@@ -449,11 +457,13 @@ try {
   const archive = fs.readFileSync(path.join(buildRoot, 'dist', 'news', 'archive', 'index.html'), 'utf8');
   assert.match(latest, /<html lang="ka">/);
   assert.match(latest, /შესწორებული და განზრახ ძალიან გრძელი ქართული სათაური/);
-  assert.match(latest, /თუ მხოლოდ ერთი წუთი გაქვთ/);
+  assert.match(latest, /<h2 id="news-overview-title">დღე მოკლედ<\/h2>/);
   assert.match(latest, /მნიშვნელოვანი ამბავი/);
   assert.match(latest, /href="#fictional-public-service-update"/);
-  assert.match(latest, /<a class="news-story-nav-contents" href="#news-contents-title">\[სარჩევი\]<\/a>/);
-  assert.doesNotMatch(latest, /class="news-rail"/);
+  assert.match(latest, /class="news-story-permalink" href="\/news\/2026-09-20\/#fictional-public-service-update"/);
+  assert.doesNotMatch(latest, /news-story-nav|news-rail/);
+  // A single-story edition still gets the contents contract.
+  assert.match(latest, /<details class="news-contents" id="news-contents" open>/);
   assert.match(latest, /https:\/\/example\.com\/fictional-news-fixture/);
   assert.doesNotMatch(latest, /&lt;article class=&quot;news-story&quot;/);
   assert.match(dated, /<link rel="canonical" href="https:\/\/shoti\.github\.io\/news\/2026-09-20\/">/);
