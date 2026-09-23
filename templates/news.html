@@ -1,70 +1,59 @@
 <article class="news-briefing" id="briefing-start">
   <header class="news-masthead">
-    <div class="news-masthead-top">
-      <span class="news-kicker"># დღის ამბები</span>
-      <span class="news-issue">#{{editionNumber}}</span>
-    </div>
+    <p class="news-nameplate">დღის ამბები</p>
     <h1><time datetime="{{editionDate}}">{{editionHeading}}</time></h1>
-    <p class="news-path">/news/{{editionDate}}/</p>
-    <div class="news-edition-meta">
-      <span>{{coverageFormatted}}</span>
-      <span>დაახლოებით {{readingTime}} წუთი</span>
-    </div>
-    {{#if isLatest}}<p class="news-latest-note">განახლება: {{generatedFormatted}}</p>{{/if}}
+    <p class="news-edition-line">{{editionWeekday}} · <span class="news-issue">#{{editionNumber}}</span> · <span aria-label="კითხვის დრო: {{readingTime}} წუთი">{{readingTime}}&nbsp;წუთი</span></p>
+    <p class="news-edition-line">მოცული პერიოდი: {{coverageFormatted}}, თბილისის დროით</p>
+    {{#if isLatest}}<p class="news-edition-line">განახლდა {{generatedFormatted}}</p>{{/if}}
+    <p class="news-jump"><a href="#news-stories-title">ამბების კითხვაზე გადასვლა</a></p>
     {{#if hasOrientationBanner}}{{{orientationBannerHtml}}}{{/if}}
-    <nav class="news-reading-paths" aria-label="როგორ წავიკითხოთ">
-      <a href="#news-overview-title"><strong>1 წუთი</strong><span>მხოლოდ მთავარი</span></a>
-      <a href="#news-stories-title"><strong>{{readingTime}} წუთი</strong><span>სრული მიმოხილვა</span></a>
-      <a href="/news/archive/"><strong>არქივი</strong><span>წინა დღეები</span></a>
-    </nav>
   </header>
 
-  {{#if hasStoryRail}}
-  <nav class="news-rail" aria-label="ამბების სია">
-    <ol>{{#each railStories}}<li><a href="#{{id}}" title="{{headline}}"><span class="news-rail-dot">[{{importance}}]</span></a></li>{{/each}}</ol>
-  </nav>
-  {{/if}}
+  <div class="news-body">
+    <section class="news-overview" aria-labelledby="news-overview-title">
+      <h2 id="news-overview-title">დღე მოკლედ</h2>
+      <p class="news-introduction">{{introduction}}</p>
+      <ul class="news-takeaways">
+        {{{takeawaysHtml}}}
+      </ul>
+    </section>
 
-  <section class="news-overview" aria-labelledby="news-overview-title">
-    <div class="news-section-label">თუ მხოლოდ ერთი წუთი გაქვთ</div>
-    <h2 id="news-overview-title">დღე მოკლედ</h2>
-    <p class="news-introduction">{{introduction}}</p>
-    <ul class="news-takeaways">
-      {{{takeawaysHtml}}}
-    </ul>
-  </section>
+    <details class="news-contents" id="news-contents" open>
+      <summary><span class="news-contents-label">სარჩევი</span> <span class="news-contents-count">{{storyCount}} ამბავი</span></summary>
+      <nav aria-labelledby="news-contents-title">
+        <h2 class="news-contents-title" id="news-contents-title">ამ გამოშვებაში</h2>
+        <ol>{{{storiesNavHtml}}}</ol>
+      </nav>
+    </details>
 
-  <nav class="news-contents" aria-labelledby="news-contents-title">
-    <div class="news-section-label">{{storyCount}} შერჩეული ამბავი</div>
-    <h2 id="news-contents-title">ამ გამოშვებაში</h2>
-    <ol>{{{storiesNavHtml}}}</ol>
-    {{#if hasStoryRail}}<p class="news-shortcuts-hint"><kbd>j</kbd> შემდეგი <kbd>k</kbd> წინა ამბავი</p>{{/if}}
-  </nav>
+    <section class="news-stories" aria-labelledby="news-stories-title">
+      <h2 class="news-stories-title" id="news-stories-title">მთავარი ამბები</h2>
+      {{{storiesHtml}}}
+    </section>
+  </div>
 
-  <section class="news-stories" aria-labelledby="news-stories-title">
-    <h2 class="news-stories-title" id="news-stories-title">მთავარი ამბები</h2>
-    {{{storiesHtml}}}
-  </section>
+  <div class="news-colophon">
+    {{#if coverageNote}}
+    <aside class="news-coverage-note" aria-labelledby="news-coverage-note-title">
+      <h2 id="news-coverage-note-title">რა ვერ მოვიცავით სრულად</h2>
+      <p>{{coverageNote}}</p>
+    </aside>
+    {{/if}}
 
-  {{#if coverageNote}}
-  <aside class="news-coverage-note" aria-label="რა ვერ მოვიცავით სრულად">
-    <strong>! რა ვერ მოვიცავით სრულად</strong>
-    <p>{{coverageNote}}</p>
-  </aside>
-  {{/if}}
+    <footer class="news-disclosure">
+      <p>მიმოხილვა წყაროებზე დაყრდნობით, AI-ის დახმარებით მომზადდა და ტექნიკური შემოწმება გაიარა. ყველა ამბავს ახლავს პირდაპირი ბმული, რათა მნიშვნელოვანი დეტალები თავადაც გადაამოწმოთ.</p>
+      <nav aria-label="დამატებითი ბმულები">
+        <a href="/news/archive/">წინა გამოშვებები</a>
+        <a href="/news/rss.xml">RSS</a>
+        <a href="{{editionJsonUrl}}">მონაცემები JSON-ად</a>
+      </nav>
+    </footer>
 
-  <footer class="news-disclosure">
-    <p>მიმოხილვა წყაროებზე დაყრდნობით, AI-ის დახმარებით მომზადდა და ტექნიკური შემოწმება გაიარა. ყველა ამბავს ახლავს პირდაპირი ბმული, რათა მნიშვნელოვანი დეტალები თავადაც გადაამოწმოთ.</p>
-    <nav aria-label="დამატებითი ბმულები">
-      <a href="/news/archive/">[წინა გამოშვებები]</a>
-      <a href="{{editionJsonUrl}}">[მონაცემები JSON-ად]</a>
-    </nav>
-  </footer>
-
-  {{#if revisionHistory}}
-  <details class="news-revisions">
-    <summary>განახლებების ისტორია ({{revisionCount}})</summary>
-    <ol>{{{revisionHistoryHtml}}}</ol>
-  </details>
-  {{/if}}
+    {{#if revisionHistory}}
+    <details class="news-revisions">
+      <summary>განახლებების ისტორია ({{revisionCount}})</summary>
+      <ol>{{{revisionHistoryHtml}}}</ol>
+    </details>
+    {{/if}}
+  </div>
 </article>

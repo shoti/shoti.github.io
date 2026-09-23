@@ -7,6 +7,7 @@
   <meta name="description" content="{{description}}">
   <meta name="author" content="Shota Mtvarelishvili">
   <meta name="color-scheme" content="light dark">
+  {{#if robots}}<meta name="robots" content="{{robots}}">{{/if}}
   <link rel="canonical" href="{{canonical}}">
   <meta property="og:title" content="{{ogTitle}}">
   <meta property="og:description" content="{{description}}">
@@ -26,7 +27,7 @@
   {{#if ogImage}}<meta name="twitter:image" content="{{ogImage}}">
   {{#if ogImageAlt}}<meta name="twitter:image:alt" content="{{ogImageAlt}}">{{/if}}{{/if}}
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="alternate" type="application/rss+xml" title="Shota Mtvarelishvili" href="/rss.xml">
+  <link rel="alternate" type="application/rss+xml" title="{{feedTitle}}" href="{{feedUrl}}">
   <script>
     try {
       const theme = localStorage.getItem('theme');
@@ -46,13 +47,13 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&amp;family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400;1,600&amp;family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400;1,600&amp;family=Noto+Sans+Georgian:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <link href="{{fontHref}}" rel="stylesheet">
   <link rel="stylesheet" href="/css/style.css">
   {{{head}}}
 </head>
 <body class="{{bodyClass}}">
   <a class="skip-link" href="#main-content">{{skipLabel}}</a>
-  {{#if readingProgress}}<div class="reading-progress" id="reading-progress" role="progressbar" aria-label="Reading progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>{{/if}}
+  {{#if readingProgress}}<div class="reading-progress" id="reading-progress" role="progressbar" aria-label="{{progressLabel}}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>{{/if}}
   {{#if showSiteHeader}}
   <header class="site-header">
     <div class="header-inner">
@@ -73,8 +74,49 @@
   {{/if}}
   {{#if newsChrome}}
   <div class="news-chrome">
-    <a class="news-chrome-home" href="/news/">[დღის ამბები]</a>
-    <a class="news-chrome-archive" href="/news/archive/">[არქივი]</a>
+    <div class="news-chrome-inner">
+      <a class="news-chrome-home" href="/news/">დღის ამბები</a>
+      <div class="news-chrome-actions">
+        {{#if newsContentsLink}}<a class="news-chrome-contents" href="#news-contents">სარჩევი</a>{{/if}}
+        <a class="news-chrome-archive" href="/news/archive/">არქივი</a>
+        <details class="reader-settings news-reading-settings">
+          <summary aria-label="კითხვის პარამეტრები"><span aria-hidden="true">Aa</span></summary>
+          <div class="reader-settings-panel">
+            <div class="reader-settings-heading">კითხვის პარამეტრები</div>
+            <fieldset>
+              <legend>ტექსტის ზომა</legend>
+              <div class="reader-size-control">
+                <button type="button" data-reader-size-step="-1" aria-label="ტექსტის დაპატარავება">−</button>
+                <output id="reader-size-value" aria-live="polite">100%</output>
+                <button type="button" data-reader-size-step="1" aria-label="ტექსტის გადიდება">+</button>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>შრიფტი</legend>
+              <div class="reader-options">
+                <button type="button" data-reader-font="serif" aria-pressed="true">სერიფიანი</button>
+                <button type="button" data-reader-font="sans" aria-pressed="false">უსერიფო</button>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>სტრიქონების დაშორება</legend>
+              <div class="reader-options reader-spacing-options">
+                <button type="button" data-reader-spacing="compact" aria-pressed="false">მჭიდრო</button>
+                <button type="button" data-reader-spacing="comfortable" aria-pressed="true">საშუალო</button>
+                <button type="button" data-reader-spacing="relaxed" aria-pressed="false">ფართო</button>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend>ფონი</legend>
+              <button id="news-theme-toggle" class="news-theme-toggle" type="button" hidden aria-pressed="false">
+                <span class="news-theme-toggle-text"></span>
+              </button>
+            </fieldset>
+            <button class="reader-reset" type="button" id="reader-reset" data-reset-theme>ნაგულისხმევის აღდგენა</button>
+          </div>
+        </details>
+      </div>
+    </div>
   </div>
   {{/if}}
   <main id="main-content">

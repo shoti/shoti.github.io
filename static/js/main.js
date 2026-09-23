@@ -33,6 +33,15 @@ function writeStoredTheme(theme, getStorage = () => localStorage) {
   }
 }
 
+function clearStoredTheme(getStorage = () => localStorage) {
+  try {
+    getStorage().removeItem('theme');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function normalizeReaderPreferences(preferences = {}) {
   return {
     font: READER_FONTS.includes(preferences.font) ? preferences.font : READER_DEFAULTS.font,
@@ -168,8 +177,9 @@ function themeControlState(theme, language = 'en') {
   const georgian = language === 'ka';
   return {
     label: georgian
-      ? dark ? 'ღია ფერზე გადასვლა' : 'მუქ ფერზე გადასვლა'
+      ? dark ? 'ღია ფონზე გადასვლა' : 'მუქ ფონზე გადასვლა'
       : dark ? 'Switch to light mode' : 'Switch to dark mode',
+    text: georgian ? (dark ? 'ღია ფონი' : 'მუქი ფონი') : (dark ? 'Light' : 'Dark'),
     pressed: String(dark)
   };
 }
@@ -244,10 +254,26 @@ function pickClosestIntersecting(entries) {
   return visible.reduce((a, b) => (a.top >= b.top ? a : b)).id;
 }
 
+// Move only the index's own scroll area; scrollIntoView would also move the
+// article the reader is following. Oversized entries keep their beginning visible.
+function revealContentsLink(contents, link) {
+  if (!contents?.open || !link || !contents.clientHeight) return;
+  const top = contents.getBoundingClientRect().top + contents.clientTop;
+  const bottom = top + contents.clientHeight;
+  const bounds = link.getBoundingClientRect();
+  const delta = bounds.top < top || bounds.height > contents.clientHeight
+    ? bounds.top - top
+    : Math.max(0, bounds.bottom - bottom);
+  if (delta) contents.scrollTop += delta;
+}
+
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', () => {
     const root = document.documentElement;
-    const toggle = document.getElementById('theme-toggle');
+    const toggles = [
+      document.getElementById('theme-toggle'),
+      document.getElementById('news-theme-toggle')
+    ].filter(Boolean);
     const mediaQuery = matchMedia('(prefers-color-scheme: dark)');
     const stored = readStoredTheme();
     if (stored) root.setAttribute('data-theme', stored);
@@ -255,10 +281,14 @@ if (typeof document !== 'undefined') {
     const effectiveTheme = () => resolveTheme(root.getAttribute('data-theme'), mediaQuery.matches);
 
     const updateThemeControl = () => {
-      if (!toggle) return;
       const state = themeControlState(effectiveTheme(), root.lang);
-      toggle.setAttribute('aria-pressed', state.pressed);
-      toggle.setAttribute('aria-label', state.label);
+      for (const button of toggles) {
+        button.hidden = false;
+        button.setAttribute('aria-pressed', state.pressed);
+        button.setAttribute('aria-label', state.label);
+        const text = button.querySelector('.news-theme-toggle-text');
+        if (text) text.textContent = state.text;
+      }
     };
     updateThemeControl();
     subscribeToMediaChanges(mediaQuery, updateThemeControl);
@@ -268,22 +298,25 @@ if (typeof document !== 'undefined') {
       root.classList.add('transitions-ready');
     }));
 
-    toggle?.addEventListener('click', () => {
-      const next = effectiveTheme() === 'dark' ? 'light' : 'dark';
-      root.setAttribute('data-theme', next);
-      writeStoredTheme(next);
-      updateThemeControl();
-      const rotation = parseInt(toggle.dataset.r || '0', 10) + 180;
-      toggle.dataset.r = rotation;
-      toggle.style.transform = `rotate(${rotation}deg)`;
-    });
+    for (const button of toggles) {
+      button.addEventListener('click', () => {
+        const next = effectiveTheme() === 'dark' ? 'light' : 'dark';
+        root.setAttribute('data-theme', next);
+        writeStoredTheme(next);
+        updateThemeControl();
+        if (button.id !== 'theme-toggle') return;
+        const rotation = parseInt(button.dataset.r || '0', 10) + 180;
+        button.dataset.r = rotation;
+        button.style.transform = `rotate(${rotation}deg)`;
+      });
+    }
 
     // Reader preferences
     let readerPreferences = applyReaderPreferences(root, readReaderPreferences());
     const sizeOutput = document.getElementById('reader-size-value');
     const sizeButtons = Array.from(document.querySelectorAll('[data-reader-size-step]'));
-    const fontButtons = Array.from(document.querySelectorAll('[data-reader-font]'));
-    const spacingButtons = Array.from(document.querySelectorAll('[data-reader-spacing]'));
+    const fontButtons = Array.from(document.querySelectorAll('button[data-reader-font]'));
+    const spacingButtons = Array.from(document.querySelectorAll('button[data-reader-spacing]'));
 
     const syncReaderControls = () => {
       const state = readerControlState(readerPreferences);
@@ -324,8 +357,14 @@ if (typeof document !== 'undefined') {
         spacing: button.dataset.readerSpacing
       }));
     }
-    document.getElementById('reader-reset')?.addEventListener('click', () => {
+    const readerReset = document.getElementById('reader-reset');
+    readerReset?.addEventListener('click', () => {
       updateReaderPreferences(READER_DEFAULTS);
+      if (readerReset.hasAttribute('data-reset-theme')) {
+        clearStoredTheme();
+        root.removeAttribute('data-theme');
+        updateThemeControl();
+      }
     });
     const readerSettings = document.querySelector('.reader-settings');
     document.addEventListener('click', event => {
@@ -334,6 +373,9 @@ if (typeof document !== 'undefined') {
     readerSettings?.addEventListener('keydown', event => {
       if (event.key !== 'Escape') return;
       dismissReaderSettings(readerSettings, true);
+    });
+    readerSettings?.addEventListener('focusout', event => {
+      if (event.relatedTarget && !readerSettings.contains(event.relatedTarget)) dismissReaderSettings(readerSettings);
     });
     syncReaderControls();
 
@@ -370,64 +412,93 @@ if (typeof document !== 'undefined') {
       updateReadingProgress();
     }
 
-    // News: story rail + contents scrollspy, and j/k reading shortcuts
+    // News: keep the contents index in step with the reading position. The
+    // margin rail and the global j/k shortcut are gone — a single-letter
+    // shortcut with no way to turn it off is a WCAG 2.1.4 problem, and the
+    // sticky contents route covers navigation at every width instead.
     const newsStories = Array.from(document.querySelectorAll('.news-story'));
-    if (newsStories.length > 1) {
-      const railLinks = new Map(Array.from(document.querySelectorAll('.news-rail a'))
-        .map(link => [link.getAttribute('href').slice(1), link]));
+    const newsContents = document.getElementById('news-contents');
+    const wideNews = newsContents ? matchMedia('(min-width: 1080px)') : null;
+    const newsChrome = document.querySelector('.news-chrome');
+
+    // The bar can wrap when text is enlarged. Measure it so anchor targets
+    // and the sticky index always clear the actual header, not a fixed guess.
+    if (newsChrome) {
+      const syncChromeHeight = () => root.style.setProperty(
+        '--news-header-height', `${newsChrome.getBoundingClientRect().height}px`
+      );
+      syncChromeHeight();
+      if (typeof ResizeObserver === 'function') {
+        new ResizeObserver(syncChromeHeight).observe(newsChrome);
+      } else {
+        window.addEventListener('resize', syncChromeHeight);
+      }
+    }
+
+    if (newsStories.length > 1 && typeof IntersectionObserver === 'function') {
       const contentsLinks = new Map(Array.from(document.querySelectorAll('.news-contents a'))
         .map(link => [link.getAttribute('href').slice(1), link]));
-
-      const reducedMotion = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : null;
       let activeStoryId = null;
-      // The index a keyboard jump last targeted, kept independent of scroll-in-flight
-      // geometry so repeated j/k presses always advance one story at a time instead of
-      // re-reading a position that hasn't finished animating yet.
-      let targetIndex = -1;
+      const revealActiveStory = () => {
+        if (wideNews?.matches) revealContentsLink(newsContents, contentsLinks.get(activeStoryId));
+      };
       const setActiveStory = id => {
         if (id === activeStoryId) return;
-        if (activeStoryId) {
-          railLinks.get(activeStoryId)?.removeAttribute('aria-current');
-          contentsLinks.get(activeStoryId)?.removeAttribute('aria-current');
-        }
+        if (activeStoryId) contentsLinks.get(activeStoryId)?.removeAttribute('aria-current');
         activeStoryId = id;
-        targetIndex = newsStories.findIndex(story => story.id === id);
-        railLinks.get(id)?.setAttribute('aria-current', 'true');
         contentsLinks.get(id)?.setAttribute('aria-current', 'true');
+        revealActiveStory();
       };
+      const observer = new IntersectionObserver(entries => {
+        const id = pickClosestIntersecting(entries.map(entry => ({
+          id: entry.target.id,
+          top: entry.boundingClientRect.top,
+          isIntersecting: entry.isIntersecting
+        })));
+        if (id) setActiveStory(id);
+      }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+      for (const story of newsStories) observer.observe(story);
+      window.addEventListener('resize', createFrameScheduler(revealActiveStory));
+      newsContents?.addEventListener('toggle', revealActiveStory);
+    }
 
-      if (typeof IntersectionObserver === 'function') {
-        const observer = new IntersectionObserver(entries => {
-          const id = pickClosestIntersecting(entries.map(entry => ({
-            id: entry.target.id,
-            top: entry.boundingClientRect.top,
-            isIntersecting: entry.isIntersecting
-          })));
-          if (id) setActiveStory(id);
-        }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
-        for (const story of newsStories) observer.observe(story);
-      }
+    if (newsContents) {
+      // The contents ship open so the list is complete without scripting. On
+      // narrow screens that would push the first story far down the page, so
+      // collapse it here and let the summary reopen it.
+      const syncContents = () => { newsContents.open = wideNews.matches; };
+      syncContents();
+      subscribeToMediaChanges(wideNews, syncContents);
 
-      document.addEventListener('keydown', event => {
-        if (event.metaKey || event.ctrlKey || event.altKey || event.repeat) return;
-        if (event.key !== 'j' && event.key !== 'k') return;
-        const target = event.target;
-        if (target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) return;
-        if (targetIndex === -1) {
-          const tops = newsStories.map(story => story.getBoundingClientRect().top);
-          targetIndex = findActiveStoryIndex(tops);
+      // Reaching the contents from the sticky bar should show them, not just
+      // scroll to a collapsed summary.
+      const openContents = () => {
+        if (location.hash === '#news-contents') newsContents.open = true;
+      };
+      window.addEventListener('hashchange', openContents);
+      openContents();
+      document.addEventListener('click', event => {
+        const link = event.target instanceof Element
+          ? event.target.closest('a[href="#news-contents"]')
+          : null;
+        if (link) newsContents.open = true;
+      });
+    }
+
+    // A collapsed disclosure prints as nothing, so open them for printing and
+    // put them back afterwards.
+    const printDetails = Array.from(document.querySelectorAll('.news-source-detail, .news-revisions'));
+    if (printDetails.length) {
+      window.addEventListener('beforeprint', () => {
+        for (const item of printDetails) {
+          item.dataset.reopen = item.open ? 'open' : 'closed';
+          item.open = true;
         }
-        const nextIndex = adjacentStoryIndex(targetIndex, event.key === 'j' ? 1 : -1, newsStories.length);
-        const nextStory = newsStories[nextIndex];
-        if (!nextStory) return;
-        event.preventDefault();
-        targetIndex = nextIndex;
-        setActiveStory(nextStory.id);
-        nextStory.scrollIntoView({ behavior: reducedMotion?.matches ? 'auto' : 'smooth', block: 'start' });
-        const heading = nextStory.querySelector('h2');
-        if (heading) {
-          heading.setAttribute('tabindex', '-1');
-          heading.focus({ preventScroll: true });
+      });
+      window.addEventListener('afterprint', () => {
+        for (const item of printDetails) {
+          if (item.dataset.reopen === 'closed') item.open = false;
+          delete item.dataset.reopen;
         }
       });
     }
@@ -439,6 +510,7 @@ if (typeof module !== 'undefined') {
     adjacentStoryIndex,
     applyReaderPreferences,
     calculateReadingProgress,
+    clearStoredTheme,
     createTableOfContentsEntries,
     createFrameScheduler,
     dismissReaderSettings,
@@ -450,6 +522,7 @@ if (typeof module !== 'undefined') {
     readReaderPreferences,
     readStoredTheme,
     readerControlState,
+    revealContentsLink,
     resolveTheme,
     shouldDismissReaderSettings,
     slugifyHeading,
