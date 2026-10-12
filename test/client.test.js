@@ -2,22 +2,17 @@
 
 const assert = require('assert');
 const {
-  adjacentStoryIndex,
   applyReaderPreferences,
   calculateReadingProgress,
-  clearStoredTheme,
   createTableOfContentsEntries,
   createFrameScheduler,
   dismissReaderSettings,
-  findActiveStoryIndex,
   initializeTableOfContents,
   isNavActive,
   normalizeReaderPreferences,
-  pickClosestIntersecting,
   readReaderPreferences,
   readStoredTheme,
   readerControlState,
-  revealContentsLink,
   resolveTheme,
   shouldDismissReaderSettings,
   slugifyHeading,
@@ -30,11 +25,6 @@ const {
 } = require('../static/js/main');
 
 assert.strictEqual(readStoredTheme(() => ({ getItem: () => 'dark' })), 'dark');
-assert.strictEqual(themeControlState('dark', 'ka').label, 'ღია ფონზე გადასვლა');
-assert.strictEqual(themeControlState('light', 'ka').label, 'მუქ ფონზე გადასვლა');
-// The news appearance control is a labelled button, so it needs visible text too.
-assert.strictEqual(themeControlState('dark', 'ka').text, 'ღია ფონი');
-assert.strictEqual(themeControlState('light', 'ka').text, 'მუქი ფონი');
 assert.strictEqual(readStoredTheme(() => ({ getItem: () => 'unexpected' })), null);
 assert.strictEqual(readStoredTheme(() => { throw new Error('storage blocked'); }), null);
 assert.strictEqual(readStoredTheme(() => ({ getItem: () => { throw new Error('read blocked'); } })), null);
@@ -48,12 +38,6 @@ assert.strictEqual(writeStoredTheme('light', () => ({
 })), true);
 assert.strictEqual(writtenTheme, 'light');
 assert.strictEqual(writeStoredTheme('dark', () => { throw new Error('storage blocked'); }), false);
-let clearedTheme = null;
-assert.strictEqual(clearStoredTheme(() => ({ removeItem: key => { clearedTheme = key; } })), true);
-assert.strictEqual(clearedTheme, 'theme');
-assert.strictEqual(clearStoredTheme(() => { throw new Error('storage blocked'); }), false);
-assert.strictEqual(clearStoredTheme(() => ({ removeItem: () => { throw new Error('write blocked'); } })), false);
-
 assert.deepStrictEqual(normalizeReaderPreferences({
   font: 'sans',
   size: 'large',
@@ -198,12 +182,10 @@ assert.strictEqual(resolveTheme('light', true), 'light');
 assert.strictEqual(resolveTheme(null, true), 'dark');
 assert.deepStrictEqual(themeControlState('dark'), {
   label: 'Switch to light mode',
-  text: 'Light',
   pressed: 'true'
 });
 assert.deepStrictEqual(themeControlState('light'), {
   label: 'Switch to dark mode',
-  text: 'Dark',
   pressed: 'false'
 });
 
@@ -223,8 +205,6 @@ assert.strictEqual(subscribeToMediaChanges({}, () => {}), false);
 assert.strictEqual(isNavActive('/', '/'), true);
 assert.strictEqual(isNavActive('/posts/example/', '/'), true);
 assert.strictEqual(isNavActive('/archive/', '/archive/'), true);
-assert.strictEqual(isNavActive('/news/', '/news/'), true);
-assert.strictEqual(isNavActive('/news/2026-09-20/', '/news/'), true);
 assert.strictEqual(isNavActive('/about/', '/about/'), true);
 assert.strictEqual(isNavActive('/404.html', '/'), false);
 
@@ -266,55 +246,5 @@ scheduledFrames[0]();
 assert.strictEqual(scheduledUpdates, 1);
 assert.strictEqual(queueUpdate(), true);
 assert.strictEqual(scheduledFrames.length, 2);
-
-// News story rail: reading position and j/k navigation.
-assert.strictEqual(findActiveStoryIndex([-800, -120, 40, 900]), 2);
-assert.strictEqual(findActiveStoryIndex([500, 900, 1400]), 0);
-assert.strictEqual(findActiveStoryIndex([-500, -300, -50]), 2);
-assert.strictEqual(findActiveStoryIndex([]), 0);
-
-assert.strictEqual(adjacentStoryIndex(2, 1, 5), 3);
-assert.strictEqual(adjacentStoryIndex(4, 1, 5), 4);
-assert.strictEqual(adjacentStoryIndex(0, -1, 5), 0);
-assert.strictEqual(adjacentStoryIndex(-1, 1, 5), 0);
-assert.strictEqual(adjacentStoryIndex(-1, -1, 5), 0);
-assert.strictEqual(adjacentStoryIndex(2, 1, 0), -1);
-
-assert.strictEqual(pickClosestIntersecting([
-  { id: 'a', top: 300, isIntersecting: true },
-  { id: 'b', top: -50, isIntersecting: true },
-  { id: 'c', top: 900, isIntersecting: false }
-]), 'a');
-// A story mostly scrolled past keeps a deeply negative top while its tail end still
-// barely intersects; it must not outrank a story that just entered near the top.
-assert.strictEqual(pickClosestIntersecting([
-  { id: 'outgoing', top: -820, isIntersecting: true },
-  { id: 'incoming', top: 45, isIntersecting: true }
-]), 'incoming');
-assert.strictEqual(pickClosestIntersecting([
-  { id: 'a', top: 300, isIntersecting: false }
-]), null);
-assert.strictEqual(pickClosestIntersecting([]), null);
-
-// Reveal a current contents entry by moving only the sidebar's scroll position.
-const contents = {
-  open: true, clientHeight: 300, clientTop: 1, scrollTop: 200,
-  getBoundingClientRect: () => ({ top: 60 })
-};
-const contentsEntry = (top, height) => ({
-  getBoundingClientRect: () => ({ top, bottom: top + height, height })
-});
-revealContentsLink(contents, contentsEntry(100, 60));
-assert.strictEqual(contents.scrollTop, 200, 'An already visible entry must not move');
-revealContentsLink(contents, contentsEntry(320, 80));
-assert.strictEqual(contents.scrollTop, 239, 'Reveal the bottom of an entry below the viewport');
-revealContentsLink(contents, contentsEntry(40, 80));
-assert.strictEqual(contents.scrollTop, 218, 'Reveal the top of an entry above the viewport');
-revealContentsLink(contents, contentsEntry(100, 400));
-assert.strictEqual(contents.scrollTop, 257, 'An oversized entry aligns to its start');
-contents.open = false;
-revealContentsLink(contents, contentsEntry(500, 80));
-assert.strictEqual(contents.scrollTop, 257, 'Do not scroll collapsed mobile contents');
-assert.doesNotThrow(() => revealContentsLink(null, null));
 
 console.log('Client tests passed');

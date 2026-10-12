@@ -11,7 +11,6 @@ const {
   loadPosts,
   parseMarkdown,
   render,
-  renderNewsOrientationBanner,
   serializeJsonForHtml,
   validatePost
 } = require('../build');
@@ -58,20 +57,6 @@ assert.strictEqual(
 assert.strictEqual(render('<h1>{{title}}</h1>', { title: '<unsafe>' }), '<h1>&lt;unsafe&gt;</h1>');
 assert.strictEqual(render('<main>{{{content}}}</main>', { content: '<p>trusted</p>' }), '<main><p>trusted</p></main>');
 assert.throws(() => render('{{#if enabled}}broken', { enabled: true }), /Unclosed/);
-
-// Orientation banners keep an older edition or revision from being mistaken for today's news.
-const archivedBanner = renderNewsOrientationBanner('archived', { dateFormatted: '20 <script> სექტემბერი, 2026' });
-assert.match(archivedBanner, /20 &lt;script&gt; სექტემბერი, 2026/);
-assert.match(archivedBanner, /<a href="\/news\/">უახლესი გამოშვების ნახვა/);
-const revisionBanner = renderNewsOrientationBanner('revision', {
-  dateFormatted: '20 სექტემბერი, 2026',
-  editionDate: '2026-09-20',
-  revision: 1,
-  revisionCount: 2
-});
-assert.match(revisionBanner, /რედაქცია 1-ს \(სულ 2\)/);
-assert.match(revisionBanner, /<a href="\/news\/2026-09-20\/">მიმდინარე რედაქციის ნახვა/);
-assert.strictEqual(renderNewsOrientationBanner(null, {}), '');
 
 const validPost = {
   title: 'A valid post',
@@ -149,9 +134,6 @@ const post = fs.readFileSync(
   'utf8'
 );
 const notFound = fs.readFileSync(path.join(distDir, '404.html'), 'utf8');
-const news = fs.readFileSync(path.join(distDir, 'news', 'index.html'), 'utf8');
-const newsArchive = fs.readFileSync(path.join(distDir, 'news', 'archive', 'index.html'), 'utf8');
-const newsIndex = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'news', 'index.json'), 'utf8'));
 const themeBootstrapIndex = home.indexOf("localStorage.getItem('theme')");
 const readerBootstrapIndex = home.indexOf("localStorage.getItem('reader-' + setting)");
 const stylesheetIndex = home.indexOf('<link rel="stylesheet" href="/css/style.css">');
@@ -159,15 +141,15 @@ assert.ok(themeBootstrapIndex !== -1 && themeBootstrapIndex < stylesheetIndex,
   'Stored theme must be applied before the stylesheet to prevent a theme flash');
 assert.ok(readerBootstrapIndex !== -1 && readerBootstrapIndex < stylesheetIndex,
   'Stored reader preferences must be applied before the stylesheet to prevent a typography flash');
-assert.match(home, /<a class="skip-link" href="#main-content">Skip to content<\/a>/);
+assert.match(home, /<a lang="en" class="skip-link" href="#main-content">Skip to content<\/a>/);
 assert.doesNotMatch(home, /<meta property="og:image:(?:type|width|height|alt)" content="">/);
 assert.match(home, /<main id="main-content">\s*<h1 class="intro">/);
 assert.doesNotMatch(home, /&lt;h1 class=&quot;intro&quot;/);
 assert.match(post, /<span class="reading-time">\d+ min read<\/span>/);
 assert.doesNotMatch(post, /<meta property="og:image:(?:type|width|height|alt)" content="">/);
-assert.match(post, /role="progressbar" aria-label="Reading progress"/);
+assert.match(post, /role="progressbar" lang="en" aria-label="Reading progress"/);
 assert.match(post, /<details class="reader-settings">/);
-assert.match(post, /<details class="post-toc" id="post-toc" hidden>/);
+assert.match(post, /<details lang="en" class="post-toc" id="post-toc" hidden>/);
 assert.match(post, /<div class="post-body">\s*<p>/);
 assert.match(post, /<h2 id="section-[a-z0-9-]+">/);
 assert.doesNotMatch(post, /\{\{\{?[\w#/ ]+\}?\}\}/);
@@ -179,9 +161,9 @@ assert.match(georgianPost, /<html lang="ka">/);
 assert.match(georgianPost, /"inLanguage":"ka"/);
 assert.match(georgianPost, /<meta property="og:locale" content="ka_GE">/);
 assert.match(georgianPost, /family=Noto\+Serif\+Georgian/);
-assert.match(georgianPost, /<summary aria-label="კითხვის პარამეტრები">/);
-assert.match(georgianPost, /<summary>სარჩევი /);
-assert.match(georgianPost, /\d+ წუთის საკითხავი/);
+assert.match(georgianPost, /<summary aria-label="Reading settings">/);
+assert.match(georgianPost, /<summary>In this article /);
+assert.match(georgianPost, /\d+ min read/);
 assert.match(georgianPost, /<h2 id="section-საიდან-დავიწყო">/);
 assert.match(georgianPost, /Frequently-asked-questions-%28FAQ%29"/);
 assert.doesNotMatch(georgianPost, /<script[^>]+src="https?:|<iframe|\[S\d+\]|\{\{/);
@@ -191,121 +173,33 @@ const blogRss = fs.readFileSync(path.join(distDir, 'rss.xml'), 'utf8');
 assert.match(blogRss, /<item xml:lang="ka">/);
 assert.match(blogRss, /<item xml:lang="en">/);
 assert.match(notFound, /<a href="\/">Go back to the blog<\/a>/);
-assert.match(news, /<html lang="ka">/);
-// /news/ serves the newest dated edition, so it points
-// its canonical at that permanent URL rather than competing with it.
-if (newsIndex.latest === null) {
-  assert.match(news, /<link rel="canonical" href="https:\/\/shoti\.github\.io\/news\/">/);
-} else {
-  assert.match(news, new RegExp(
-    `<link rel="canonical" href="https://shoti\\.github\\.io/news/${newsIndex.latest.edition_date}/">`
-  ));
+// All articles use the same English site navigation and reading controls.
+for (const page of [home, post, georgianPost]) {
+  assert.match(page, /<header class="site-header" lang="en">/);
+  assert.match(page, /<nav class="site-nav" aria-label="Primary">/);
+  assert.match(page, /<a href="\/">Blog<\/a>/);
+  assert.match(page, /<a href="\/archive\/">Archive<\/a>/);
+  assert.match(page, /<a href="\/about\/">About<\/a>/);
+  assert.match(page, /id="theme-toggle"[^>]+aria-label="Switch to dark mode"/);
+  assert.match(page, /github\.com\/shoti\/shoti\.github\.io">Source<\/a>/);
+  assert.doesNotMatch(page, /(?:href|src)="\/news(?:\/|")|news-chrome|news-page/);
 }
-assert.match(news, /<meta property="og:image" content="https:\/\/shoti\.github\.io\/images\/news-social\.jpg">/);
-assert.match(news, /<meta property="og:image:type" content="image\/jpeg">/);
-assert.match(news, /<meta property="og:image:width" content="1200">/);
-assert.match(news, /<meta property="og:image:height" content="630">/);
-assert.match(news, /<meta name="twitter:image" content="https:\/\/shoti\.github\.io\/images\/news-social\.jpg">/);
-// News pages drop the shared blog header/nav entirely and get their own minimal chrome.
-assert.doesNotMatch(news, /<header class="site-header">/);
-assert.doesNotMatch(news, /<nav class="site-nav"/);
-assert.match(news, /<div class="news-chrome">/);
-assert.match(news, /<a class="news-chrome-home" href="\/news\/">/);
-assert.match(news, /<a class="news-chrome-archive" href="\/news\/archive\/">/);
-// News has its own localised appearance control, separate from blog chrome.
-assert.doesNotMatch(news, /id="theme-toggle"/);
-assert.match(news, /id="news-theme-toggle"/);
-assert.match(news, /<details class="reader-settings news-reading-settings">/);
-assert.match(news, /<summary aria-label="კითხვის პარამეტრები">/);
-assert.match(news, /<output id="reader-size-value" aria-live="polite">100%<\/output>/);
-assert.match(news, /data-reader-font="sans"/);
-assert.match(news, /data-reader-spacing="relaxed"/);
-assert.match(news, /id="reader-reset" data-reset-theme/);
-// News chrome is fully localised, including the shared footer label.
-assert.match(news, /github\.com\/shoti\/shoti\.github\.io">საიტის კოდი<\/a>/);
-assert.doesNotMatch(news, />Source<\/a>/);
-assert.match(home, /<p>© 2026 Shota Mtvarelishvili · <a href="mailto:mtvarelishvili@proton\.me">mtvarelishvili@proton\.me<\/a> · <a href="https:\/\/github\.com\/shoti\/shoti\.github\.io">Source<\/a><\/p>/);
-if (newsIndex.latest === null) {
-  assert.match(news, /პირველი გამოშვება ჯერ არ გამოქვეყნებულა/);
-  assert.match(news, /href="\/news\/rss.xml">RSS-ით გამოწერა/);
-  assert.doesNotMatch(news, /class="news-chrome-contents"/);
-} else {
-  const latestBriefing = JSON.parse(fs.readFileSync(
-    path.join(__dirname, '..', 'news', newsIndex.latest.path), 'utf8'
-  ));
-  assert.match(news, new RegExp(`<h1><time datetime="${newsIndex.latest.edition_date}">[^<]+<\\/time><\\/h1>`));
-  assert.match(news, /განახლდა /);
-  assert.match(news, /<span class="news-issue">#\d+<\/span>/);
-  assert.doesNotMatch(news, /რაც დღეს უნდა იცოდეთ|ბოლო გამოშვება/);
-  assert.match(news, /role="progressbar" aria-label="კითხვის პროგრესი"/);
-
-  // The contents are the single navigation contract: reachable from the sticky
-  // bar at every width, and shipped open so the list is complete without JS.
-  assert.match(news, /<a class="news-chrome-contents" href="#news-contents">სარჩევი<\/a>/);
-  assert.match(news, /<details class="news-contents" id="news-contents" open>/);
-  assert.doesNotMatch(news, /news-story-nav|news-rail|news-shortcuts-hint/);
-
-  // Every source keeps a visible link; the citation apparatus is one
-  // disclosure away rather than a framed panel per story.
-  assert.match(news, /<ul class="news-source-links">/);
-  assert.match(news, /<details class="news-source-detail"><summary>ციტირების დეტალები<\/summary>/);
-  assert.doesNotMatch(news, /target="_blank"/);
-
-  // Context and uncertainty read as prose, not as nested boxes.
-  assert.match(news, /<p class="news-story-context"><b class="news-inline-label">/);
-  assert.doesNotMatch(news, /news-why|news-frontpage/);
-
-  // One lead treatment and one regular treatment.
-  assert.strictEqual((news.match(/class="news-story news-story-lead"/g) || []).length, 1);
-  assert.strictEqual((news.match(/class="news-story news-story-regular"/g) || []).length,
-    latestBriefing.stories.length - 1);
-  assert.doesNotMatch(news, /news-story-(major|standard|brief)/);
-
-  // A shared story must retain its edition when /news/ advances to another day.
-  for (const story of latestBriefing.stories) {
-    assert.ok(news.includes('class="news-story-permalink" href="/news/' +
-      latestBriefing.edition_date + '/#' + story.id + '"'));
-  }
-}
-// A static page outlives the day it was built, so the newest edition is
-// "latest", never "today".
-if (newsIndex.latest) assert.match(newsArchive, /უახლესი გამოშვება/);
-else assert.doesNotMatch(newsArchive, /უახლესი გამოშვება/);
-assert.doesNotMatch(newsArchive, /დღევანდელი/);
-assert.match(newsArchive, /<link rel="canonical" href="https:\/\/shoti\.github\.io\/news\/archive\/">/);
-assert.match(newsArchive, /<title>არქივი — დღის ამბები<\/title>/);
-assert.match(newsArchive, /"@type":"CollectionPage"/);
-assert.match(newsArchive, /"@type":"BreadcrumbList"/);
-
-// Search snippets are cut around 160 characters; descriptions must not run long.
-for (const [label, page] of [['news', news], ['news archive', newsArchive]]) {
-  const description = page.match(/<meta name="description" content="([^"]*)">/);
-  assert.ok(description, `${label} page is missing a meta description`);
-  assert.ok(description[1].length <= 160,
-    `${label} meta description is ${description[1].length} characters, over the 160 limit`);
-}
-
-// A briefing that publishes daily needs a feed readers can actually subscribe to.
-const newsFeed = fs.readFileSync(path.join(distDir, 'news', 'rss.xml'), 'utf8');
-assert.match(newsFeed, /<language>ka<\/language>/);
-assert.match(newsFeed, /<atom:link href="https:\/\/shoti\.github\.io\/news\/rss\.xml"/);
-assert.match(news, /<link rel="alternate" type="application\/rss\+xml" title="დღის ამბები[^"]*" href="\/news\/rss\.xml">/);
+assert.strictEqual(fs.existsSync(path.join(distDir, 'news')), false);
+assert.strictEqual(fs.existsSync(path.join(distDir, 'images', 'news-social.jpg')), false);
+const sitemap = fs.readFileSync(path.join(distDir, 'sitemap.xml'), 'utf8');
+assert.doesNotMatch(sitemap, /<loc>https:\/\/shoti\.github\.io\/news\//);
 assert.match(home, /<link rel="alternate" type="application\/rss\+xml" title="Shota Mtvarelishvili" href="\/rss\.xml">/);
 
-// Superseded revisions stay reachable for readers but out of the index, and the
-// sitemap must not advertise a URL whose canonical points somewhere else.
-const sitemap = fs.readFileSync(path.join(distDir, 'sitemap.xml'), 'utf8');
-assert.doesNotMatch(sitemap, /<loc>https:\/\/shoti\.github\.io\/news\/<\/loc>/);
-assert.doesNotMatch(newsArchive, /<header class="site-header">/);
-assert.match(newsArchive, /<div class="news-chrome">/);
-// The rest of the site keeps its shared header and navigation untouched.
-assert.match(home, /<header class="site-header">/);
-assert.match(home, /<nav class="site-nav" aria-label="Primary">/);
-assert.match(home, /<a href="\/">Blog<\/a>/);
-assert.match(home, /<a href="\/news\/">News<\/a>/);
-assert.match(home, /<a href="\/archive\/">Archive<\/a>/);
-assert.match(home, /<a href="\/about\/">About<\/a>/);
-assert.match(home, /<button id="theme-toggle" class="theme-toggle"/);
-assert.ok(fs.existsSync(path.join(distDir, 'news', 'schema', 'briefing-1.0.json')));
+// Diagrams are local, accessible SVG images with no active or remote content.
+const diagrams = [...georgianPost.matchAll(/<img src="([^"]+\.svg)" alt="([^"]+)"/g)];
+assert.strictEqual(diagrams.length, 2);
+for (const [, src, alt] of diagrams) {
+  assert.ok(alt.length > 40, 'Diagram needs an explanatory text alternative');
+  const svg = fs.readFileSync(path.join(distDir, src), 'utf8');
+  assert.match(svg, /<svg[^>]+viewBox=/);
+  assert.match(svg, /<title[^>]*>.+<\/title>/);
+  assert.match(svg, /<desc[^>]*>.+<\/desc>/);
+  assert.doesNotMatch(svg, /<script|<foreignObject|\son\w+=|(?:href|src)="https?:/i);
+}
 
 console.log('Build tests passed');

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800" viewBox="0 0 600 800" role="img" aria-labelledby="title desc" lang="ka">
+  <title id="title">აღდგენის გზა ტელეფონის გარეთ</title>
+  <desc id="desc">ტელეფონის დაკარგვისას კოდების აპიც შეიძლება მიუწვდომელი გახდეს. აღდგენის კოდები, პაროლების საცავზე წვდომის გზა და ფაილების ასლები წინასწარ შეინახე სხვა დაცულ ადგილას. სხვა მოწყობილობიდან აღდგენა ერთხელ სცადე, არსებული შესვლის მეთოდის წაშლის გარეშე.</desc>
+  <style>
+    :root { --paper:#faf8f5; --card:#fff; --ink:#2b2b29; --muted:#585851; --rule:#d9d5ce; --accent:#ae432e; --wash:#f3e6de; }
+    @media (prefers-color-scheme:dark) {
+      :root { --paper:#20201e; --card:#292926; --ink:#e8e5de; --muted:#c1bcb2; --rule:#55524a; --accent:#ec977f; --wash:#352a25; }
+    }
+    text { font-family:'Noto Sans Georgian',system-ui,sans-serif; fill:var(--ink); font-size:28px; }
+    .muted { fill:var(--muted); font-size:26px; }
+    .accent { fill:var(--accent); }
+    .icon { fill:none; stroke:var(--accent); stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+    .card { fill:var(--card); stroke:var(--rule); stroke-width:1.5; }
+  </style>
+  <rect width="600" height="800" rx="8" fill="var(--paper)"/>
+  <path d="M32 32h48" stroke="var(--accent)" stroke-width="4"/>
+  <text x="32" y="82" font-size="32" font-weight="650">აღდგენის გზა</text>
+  <text x="32" y="124" font-size="32" font-weight="650">ტელეფონის გარეთ</text>
+
+  <rect class="card" x="32" y="164" width="536" height="124" rx="8" stroke-dasharray="7 6"/>
+  <g class="icon" transform="translate(54 188)">
+    <rect x="6" width="42" height="74" rx="7"/>
+    <path d="M21 62h12M-2 62L56 10"/>
+  </g>
+  <text x="130" y="210" font-weight="600">ტელეფონი დაკარგე</text>
+  <text class="muted" x="130" y="251">კოდების აპიც იქ დარჩა</text>
+
+  <text class="muted" x="32" y="343">წინასწარ, სხვა დაცულ ადგილას:</text>
+  <rect class="card" x="32" y="370" width="536" height="106" rx="8"/>
+  <g class="icon" transform="translate(54 391)">
+    <path d="M8 0h32l12 12v48H8zM40 0v14h12M18 28h24M18 40h24"/>
+  </g>
+  <text x="130" y="414" font-weight="600">აღდგენის კოდები</text>
+  <text class="muted" x="130" y="453">ელფოსტისა და 2FA-ის</text>
+
+  <rect class="card" x="32" y="496" width="536" height="106" rx="8"/>
+  <g class="icon" transform="translate(54 520)">
+    <rect x="2" y="3" width="56" height="48" rx="5"/>
+    <path d="M2 16h56M12 29h11M12 39h11"/>
+    <circle cx="41" cy="34" r="9"/>
+    <path d="M41 29v10M36 34h10"/>
+  </g>
+  <text x="130" y="540" font-weight="600">საცავზე წვდომა, ასლები</text>
+  <text class="muted" x="130" y="579">პაროლები და ფაილები</text>
+
+  <path class="icon" d="M300 616v34m-9-9 9 9 9-9"/>
+  <rect x="32" y="666" width="536" height="102" rx="8" fill="var(--wash)"/>
+  <path class="icon" d="m55 706 10 10 20-24"/>
+  <text x="104" y="708" font-weight="600">აღადგინე წვდომა</text>
+  <text class="muted" x="104" y="746">სხვა მოწყობილობიდან</text>
+</svg>

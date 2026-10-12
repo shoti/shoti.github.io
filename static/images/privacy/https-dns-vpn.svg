@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="1080" viewBox="0 0 600 1080" role="img" aria-labelledby="title desc" lang="ka">
+  <title id="title">HTTPS, დაშიფრული DNS და VPN</title>
+  <desc id="desc">HTTPS შენსა და საიტს შორის შინაარსს შიფრავს. დაშიფრული DNS სახელის მოძებნის შეკითხვას DNS-ის მომწოდებლამდე იცავს. VPN გვირაბი მოწყობილობასა და VPN სერვერს შორის კავშირს შიფრავს; მის შემდეგ საიტამდე შინაარსს ისევ HTTPS იცავს. DNS-ისა და VPN-ის მომწოდებლებს შესაბამის ინფორმაციას ანდობ; საიტი შენ მიერ გაგზავნილ მონაცემებს მაინც იღებს.</desc>
+  <style>
+    :root { --paper:#faf8f5; --ink:#2b2b29; --muted:#585851; --rule:#d9d5ce; --accent:#ae432e; --wash:#f3e6de; --secure:#386c60; }
+    @media (prefers-color-scheme:dark) {
+      :root { --paper:#20201e; --ink:#e8e5de; --muted:#c1bcb2; --rule:#55524a; --accent:#ec977f; --wash:#352a25; --secure:#9bc7b6; }
+    }
+    text { font-family:'Noto Sans Georgian',system-ui,sans-serif; fill:var(--ink); font-size:28px; }
+    .heading { font-size:32px; font-weight:650; }
+    .muted { fill:var(--muted); font-size:26px; }
+    .icon { fill:var(--paper); stroke:var(--ink); stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+    .secure { fill:none; stroke:var(--secure); stroke-width:5; stroke-linecap:round; }
+    .lock { fill:var(--paper); stroke:var(--secure); stroke-width:3; stroke-linecap:round; }
+  </style>
+  <defs>
+    <g id="phone" class="icon"><rect x="-20" y="-34" width="40" height="68" rx="6"/><path d="M-5 24h10"/></g>
+    <g id="site" class="icon"><rect x="-29" y="-25" width="58" height="50" rx="4"/><path d="M-29-10h58M-19-18h1m7 0h1m7 0h1"/></g>
+    <g id="lock" class="lock"><rect x="-14" y="-4" width="28" height="23" rx="3"/><path d="M-9-4v-8a9 9 0 0 1 18 0v8M0 5v6"/></g>
+  </defs>
+  <rect width="600" height="1080" rx="8" fill="var(--paper)"/>
+  <path d="M32 32h48" stroke="var(--accent)" stroke-width="4"/>
+  <text class="heading" x="32" y="83">რას იცავს თითოეული ფენა?</text>
+
+  <text class="heading" x="32" y="154">01 · HTTPS</text>
+  <path class="secure" d="M102 225h396"/>
+  <use href="#phone" x="76" y="225"/>
+  <use href="#lock" x="300" y="219"/>
+  <use href="#site" x="528" y="225"/>
+  <text x="76" y="294" text-anchor="middle">შენ</text>
+  <text x="528" y="294" text-anchor="middle">საიტი</text>
+  <text class="muted" x="32" y="343">შინაარსი გზაში დაშიფრულია.</text>
+  <text class="muted" x="32" y="381">საიტი გაგზავნილ მონაცემებს იღებს.</text>
+  <path d="M32 415h536" stroke="var(--rule)"/>
+
+  <text class="heading" x="32" y="466">02 · დაშიფრული DNS</text>
+  <path class="secure" d="M102 538h396"/>
+  <use href="#phone" x="76" y="538"/>
+  <use href="#lock" x="300" y="532"/>
+  <g class="icon" transform="translate(528 538)"><rect x="-27" y="-30" width="54" height="60" rx="4"/><path d="M-17-14h23M-17 0h23M-17 14h23"/></g>
+  <text x="76" y="607" text-anchor="middle">შენ</text>
+  <text x="528" y="607" text-anchor="middle">DNS</text>
+  <text class="muted" x="32" y="656">დომენის მოძებნის კითხვა იშიფრება.</text>
+  <text class="muted" x="32" y="694">DNS-ის მომწოდებელი მას ხედავს.</text>
+  <path d="M32 728h536" stroke="var(--rule)"/>
+
+  <text class="heading" x="32" y="779">03 · VPN + HTTPS</text>
+  <rect x="42" y="835" width="329" height="98" rx="14" fill="var(--wash)" stroke="var(--accent)" stroke-width="2" stroke-dasharray="6 5"/>
+  <text x="206" y="866" text-anchor="middle" style="fill:var(--accent);font-size:26px">VPN გვირაბი</text>
+  <path class="secure" d="M102 898h396"/>
+  <use href="#phone" x="76" y="898" transform="translate(15 0)"/>
+  <circle class="icon" cx="334" cy="898" r="22"/>
+  <path d="m326 898 6 6 11-13" fill="none" stroke="var(--accent)" stroke-width="3"/>
+  <use href="#lock" x="444" y="892"/>
+  <use href="#site" x="528" y="898"/>
+  <text x="90" y="978" text-anchor="middle">შენ</text>
+  <text x="334" y="978" text-anchor="middle">VPN</text>
+  <text x="528" y="978" text-anchor="middle">საიტი</text>
+  <text class="muted" x="32" y="1032">საიტამდე შინაარსს HTTPS იცავს.</text>
+</svg>

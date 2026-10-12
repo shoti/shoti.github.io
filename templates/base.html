@@ -51,11 +51,10 @@
   <link rel="stylesheet" href="/css/style.css">
   {{{head}}}
 </head>
-<body class="{{bodyClass}}">
-  <a class="skip-link" href="#main-content">{{skipLabel}}</a>
-  {{#if readingProgress}}<div class="reading-progress" id="reading-progress" role="progressbar" aria-label="{{progressLabel}}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>{{/if}}
-  {{#if showSiteHeader}}
-  <header class="site-header">
+<body>
+  <a lang="en" class="skip-link" href="#main-content">{{skipLabel}}</a>
+  {{#if readingProgress}}<div class="reading-progress" id="reading-progress" role="progressbar" lang="en" aria-label="{{progressLabel}}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>{{/if}}
+  <header class="site-header" lang="en">
     <div class="header-inner">
       <div class="header-title">
         <a href="/" class="site-name">Shota Mtvarelishvili</a>
@@ -63,7 +62,6 @@
       </div>
       <nav class="site-nav" aria-label="{{primaryNavLabel}}">
         <a href="/">{{blogLabel}}</a>
-        <a href="/news/">{{newsLabel}}</a>
         <a href="/archive/">{{archiveLabel}}</a>
         <a href="/about/">{{aboutLabel}}</a>
         <a href="/rss.xml">RSS</a>
@@ -71,58 +69,10 @@
       </nav>
     </div>
   </header>
-  {{/if}}
-  {{#if newsChrome}}
-  <div class="news-chrome">
-    <div class="news-chrome-inner">
-      <a class="news-chrome-home" href="/news/">დღის ამბები</a>
-      <div class="news-chrome-actions">
-        {{#if newsContentsLink}}<a class="news-chrome-contents" href="#news-contents">სარჩევი</a>{{/if}}
-        <a class="news-chrome-archive" href="/news/archive/">არქივი</a>
-        <details class="reader-settings news-reading-settings">
-          <summary aria-label="კითხვის პარამეტრები"><span aria-hidden="true">Aa</span></summary>
-          <div class="reader-settings-panel">
-            <div class="reader-settings-heading">კითხვის პარამეტრები</div>
-            <fieldset>
-              <legend>ტექსტის ზომა</legend>
-              <div class="reader-size-control">
-                <button type="button" data-reader-size-step="-1" aria-label="ტექსტის დაპატარავება">−</button>
-                <output id="reader-size-value" aria-live="polite">100%</output>
-                <button type="button" data-reader-size-step="1" aria-label="ტექსტის გადიდება">+</button>
-              </div>
-            </fieldset>
-            <fieldset>
-              <legend>შრიფტი</legend>
-              <div class="reader-options">
-                <button type="button" data-reader-font="serif" aria-pressed="true">სერიფიანი</button>
-                <button type="button" data-reader-font="sans" aria-pressed="false">უსერიფო</button>
-              </div>
-            </fieldset>
-            <fieldset>
-              <legend>სტრიქონების დაშორება</legend>
-              <div class="reader-options reader-spacing-options">
-                <button type="button" data-reader-spacing="compact" aria-pressed="false">მჭიდრო</button>
-                <button type="button" data-reader-spacing="comfortable" aria-pressed="true">საშუალო</button>
-                <button type="button" data-reader-spacing="relaxed" aria-pressed="false">ფართო</button>
-              </div>
-            </fieldset>
-            <fieldset>
-              <legend>ფონი</legend>
-              <button id="news-theme-toggle" class="news-theme-toggle" type="button" hidden aria-pressed="false">
-                <span class="news-theme-toggle-text"></span>
-              </button>
-            </fieldset>
-            <button class="reader-reset" type="button" id="reader-reset" data-reset-theme>ნაგულისხმევის აღდგენა</button>
-          </div>
-        </details>
-      </div>
-    </div>
-  </div>
-  {{/if}}
   <main id="main-content">
     {{{content}}}
   </main>
-  <footer class="site-footer">
+  <footer class="site-footer" lang="en">
     <p>© 2026 Shota Mtvarelishvili · <a href="mailto:mtvarelishvili@proton.me">mtvarelishvili@proton.me</a> · <a href="https://github.com/shoti/shoti.github.io">{{sourceLabel}}</a></p>
   </footer>
   <script src="/js/main.js"></script>
