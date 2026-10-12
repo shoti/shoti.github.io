@@ -109,6 +109,14 @@ assert.deepStrictEqual(readerControlState({ font: 'serif', size: 'medium', spaci
 
 assert.strictEqual(slugifyHeading('A Better Reading Experience!'), 'a-better-reading-experience');
 assert.strictEqual(slugifyHeading('...'), 'section');
+assert.strictEqual(slugifyHeading('ანგარიშების დაცვა!'), 'ანგარიშების-დაცვა');
+assert.deepStrictEqual(createTableOfContentsEntries([
+  { level: 2, title: 'ანგარიშების დაცვა' },
+  { level: 3, title: 'ანგარიშების დაცვა' }
+]), [
+  { id: 'section-ანგარიშების-დაცვა', level: 2, title: 'ანგარიშების დაცვა' },
+  { id: 'section-ანგარიშების-დაცვა-2', level: 3, title: 'ანგარიშების დაცვა' }
+]);
 assert.deepStrictEqual(createTableOfContentsEntries([
   { level: 2, title: 'Why this matters' },
   { level: 3, title: 'The details' },

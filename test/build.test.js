@@ -31,6 +31,10 @@ assert.strictEqual(
   '<h2 id="section-why-this-matters">Why this matters</h2>\n<h2 id="section-why-this-matters-2">Why this matters</h2>'
 );
 assert.match(parseMarkdown('## Main Content'), /^<h2 id="section-main-content">/);
+assert.strictEqual(
+  parseMarkdown('## ანგარიშების დაცვა\n\n## ანგარიშების დაცვა'),
+  '<h2 id="section-ანგარიშების-დაცვა">ანგარიშების დაცვა</h2>\n<h2 id="section-ანგარიშების-დაცვა-2">ანგარიშების დაცვა</h2>'
+);
 
 // Excessive blockquote nesting must degrade to text instead of hanging.
 const deeplyNestedQuote = `${'> '.repeat(11)}still finite`;
@@ -78,6 +82,8 @@ const validPost = {
   tags: ['testing']
 };
 assert.doesNotThrow(() => validatePost(validPost, 'a-valid-post.json'));
+assert.doesNotThrow(() => validatePost({ ...validPost, lang: 'ka' }, 'a-valid-post.json'));
+assert.throws(() => validatePost({ ...validPost, lang: 'invalid' }, 'a-valid-post.json'), /lang must be en or ka/);
 assert.throws(() => validatePost(null, 'a-valid-post.json'), /expected a JSON object/);
 assert.throws(
   () => validatePost({ ...validPost, title: undefined }, 'a-valid-post.json'),
@@ -165,6 +171,25 @@ assert.match(post, /<details class="post-toc" id="post-toc" hidden>/);
 assert.match(post, /<div class="post-body">\s*<p>/);
 assert.match(post, /<h2 id="section-[a-z0-9-]+">/);
 assert.doesNotMatch(post, /\{\{\{?[\w#/ ]+\}?\}\}/);
+assert.match(post, /<html lang="en">/);
+const georgianPost = fs.readFileSync(
+  path.join(distDir, 'posts', 'privacy-and-security-guide', 'index.html'), 'utf8'
+);
+assert.match(georgianPost, /<html lang="ka">/);
+assert.match(georgianPost, /"inLanguage":"ka"/);
+assert.match(georgianPost, /<meta property="og:locale" content="ka_GE">/);
+assert.match(georgianPost, /family=Noto\+Serif\+Georgian/);
+assert.match(georgianPost, /<summary aria-label="კითხვის პარამეტრები">/);
+assert.match(georgianPost, /<summary>სარჩევი /);
+assert.match(georgianPost, /\d+ წუთის საკითხავი/);
+assert.match(georgianPost, /<h2 id="section-საიდან-დავიწყო">/);
+assert.match(georgianPost, /Frequently-asked-questions-%28FAQ%29"/);
+assert.doesNotMatch(georgianPost, /<script[^>]+src="https?:|<iframe|\[S\d+\]|\{\{/);
+const georgianHeadingIds = [...georgianPost.matchAll(/<h[23] id="([^"]+)"/g)].map(match => match[1]);
+assert.strictEqual(new Set(georgianHeadingIds).size, georgianHeadingIds.length);
+const blogRss = fs.readFileSync(path.join(distDir, 'rss.xml'), 'utf8');
+assert.match(blogRss, /<item xml:lang="ka">/);
+assert.match(blogRss, /<item xml:lang="en">/);
 assert.match(notFound, /<a href="\/">Go back to the blog<\/a>/);
 assert.match(news, /<html lang="ka">/);
 // /news/ serves the newest dated edition, so it points

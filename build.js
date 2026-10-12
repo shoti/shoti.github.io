@@ -28,7 +28,7 @@ function slugifyHeading(text) {
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
     .replace(/^-+|-+$/g, '');
   return slug || 'section';
 }
@@ -474,6 +474,9 @@ function validatePost(post, filename) {
   if (!Array.isArray(post.tags) || post.tags.some(tag => typeof tag !== 'string' || !tag.trim())) {
     throw new Error('Invalid post ' + filename + ': tags must be an array of non-empty strings');
   }
+  if (post.lang !== undefined && !['en', 'ka'].includes(post.lang)) {
+    throw new Error('Invalid post ' + filename + ': lang must be en or ka');
+  }
 }
 
 // --- New Post Command ---
@@ -590,6 +593,28 @@ const FONT_HREF_LATIN = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&
   'family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400;1,600&display=swap';
 const FONT_HREF_GEORGIAN = 'https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&' +
   'family=Noto+Serif+Georgian:wght@400..900&display=swap';
+const FONT_HREF_POST_LIST = posts.some(post => post.lang === 'ka')
+  ? FONT_HREF_LATIN.replace('&display=swap', '') + '&family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap'
+  : FONT_HREF_LATIN;
+
+const POST_LABELS = {
+  en: {
+    readingTimeSuffix: 'min read', readerSettingsLabel: 'Reading settings',
+    textSizeLabel: 'Text size', decreaseTextLabel: 'Decrease text size', increaseTextLabel: 'Increase text size',
+    typefaceLabel: 'Typeface', serifLabel: 'Serif', sansLabel: 'Sans', spacingLabel: 'Line spacing',
+    compactLabel: 'Compact', comfortableLabel: 'Comfortable', relaxedLabel: 'Relaxed',
+    resetLabel: 'Reset to defaults', contentsLabel: 'In this article', contentsNavLabel: 'Table of contents',
+    postNavLabel: 'Post navigation'
+  },
+  ka: {
+    readingTimeSuffix: 'წუთის საკითხავი', readerSettingsLabel: 'კითხვის პარამეტრები',
+    textSizeLabel: 'ტექსტის ზომა', decreaseTextLabel: 'ტექსტის დაპატარავება', increaseTextLabel: 'ტექსტის გადიდება',
+    typefaceLabel: 'შრიფტი', serifLabel: 'სერიფიანი', sansLabel: 'უსერიფო', spacingLabel: 'სტრიქონების დაშორება',
+    compactLabel: 'მჭიდრო', comfortableLabel: 'საშუალო', relaxedLabel: 'ფართო',
+    resetLabel: 'ნაგულისხმევის აღდგენა', contentsLabel: 'სარჩევი', contentsNavLabel: 'სტატიის სარჩევი',
+    postNavLabel: 'სხვა სტატიები'
+  }
+};
 
 function wrapInBase(content, data) {
   return render(baseTemplate, Object.assign({
@@ -926,6 +951,7 @@ const indexContent = render(indexTemplate, { posts: homePosts });
 const homeOgSvg = generateOgImage('Shota Mtvarelishvili');
 writeFile(path.join(DIST_DIR, 'og-home.svg'), homeOgSvg);
 const indexPage = wrapInBase(indexContent, {
+  fontHref: FONT_HREF_POST_LIST,
   title: 'Shota Mtvarelishvili',
   ogTitle: 'Shota Mtvarelishvili',
   description: 'Senior Software Engineer writing about code and things.',
@@ -965,15 +991,17 @@ writeFile(path.join(DIST_DIR, 'index.html'), indexPage);
 // Post pages
 posts.forEach((post, idx) => {
   const tags = post.tags.map(t => '#' + t).join(' ');
+  const lang = post.lang || 'en';
 
   const prevPost = idx < posts.length - 1 ? posts[idx + 1] : null;
   const nextPost = idx > 0 ? posts[idx - 1] : null;
 
   const postContent = render(postTemplate, {
+    ...POST_LABELS[lang],
     postTitle: post.title,
     date: post.date,
-    dateFormatted: formatDate(post.date),
-    readingTime: Math.max(1, Math.round(post._words / 200)),
+    dateFormatted: lang === 'ka' ? formatGeorgianDate(post.date) : formatDate(post.date),
+    readingTime: Math.max(1, Math.round(post._words / (lang === 'ka' ? 180 : 200))),
     tags: tags,
     body: post._html,
     prevPost: prevPost ? true : false,
@@ -991,6 +1019,7 @@ posts.forEach((post, idx) => {
     headline: post.title,
     description: post.description,
     datePublished: post.date,
+    inLanguage: lang,
     author: {
       '@type': 'Person',
       name: 'Shota Mtvarelishvili',
@@ -1005,6 +1034,12 @@ posts.forEach((post, idx) => {
   writeFile(path.join(DIST_DIR, 'posts', post.slug, 'og.svg'), ogSvg);
 
   const page = wrapInBase(postContent, {
+    ...(lang === 'ka' ? {
+      lang, ogLocale: 'ka_GE', fontHref: FONT_HREF_GEORGIAN,
+      skipLabel: 'შინაარსზე გადასვლა', primaryNavLabel: 'მთავარი ნავიგაცია',
+      blogLabel: 'ბლოგი', newsLabel: 'ამბები', archiveLabel: 'არქივი', aboutLabel: 'ჩემ შესახებ',
+      themeLabel: 'მუქ ფონზე გადასვლა', sourceLabel: 'საიტის კოდი', progressLabel: 'კითხვის პროგრესი'
+    } : {}),
     title: post.title + ' \u2014 Shota Mtvarelishvili',
     ogTitle: post.title,
     description: post.description,
@@ -1034,6 +1069,7 @@ const years = Object.keys(yearMap).sort().reverse().map(y => ({
 }));
 const archiveContent = render(archiveTemplate, { years: years });
 const archivePage = wrapInBase(archiveContent, {
+  fontHref: FONT_HREF_POST_LIST,
   title: 'Archive \u2014 Shota Mtvarelishvili',
   ogTitle: 'Archive',
   description: 'All posts on shoti.github.io.',
@@ -1232,6 +1268,7 @@ writeFile(path.join(DIST_DIR, 'news', 'archive', 'index.html'), newsArchivePage)
 // 404 page
 const notFoundContent = render(notFoundTemplate, { posts: homePosts.slice(0, 5) });
 const notFoundPage = wrapInBase(notFoundContent, {
+  fontHref: FONT_HREF_POST_LIST,
   title: '404 \u2014 Shota Mtvarelishvili',
   ogTitle: '404',
   description: 'Page not found.',
@@ -1245,7 +1282,7 @@ writeFile(path.join(DIST_DIR, '404.html'), notFoundPage);
 // --- RSS Feed ---
 
 const rssItems = posts.slice(0, 20).map(p => {
-  return '    <item>\n' +
+  return '    <item xml:lang="' + (p.lang || 'en') + '">\n' +
     '      <title>' + escapeXml(p.title) + '</title>\n' +
     '      <link>' + BASE_URL + '/posts/' + p.slug + '/</link>\n' +
     '      <guid>' + BASE_URL + '/posts/' + p.slug + '/</guid>\n' +
@@ -1262,7 +1299,6 @@ const rss = '<?xml version="1.0" encoding="UTF-8"?>\n' +
   '    <title>Shota Mtvarelishvili</title>\n' +
   '    <link>' + BASE_URL + '</link>\n' +
   '    <description>Senior Software Engineer writing about code and things.</description>\n' +
-  '    <language>en</language>\n' +
   '    <managingEditor>mtvarelishvili@proton.me (Shota Mtvarelishvili)</managingEditor>\n' +
   '    <atom:link href="' + BASE_URL + '/rss.xml" rel="self" type="application/rss+xml"/>\n' +
   (posts.length > 0 ? '    <lastBuildDate>' + new Date(posts[0].date + 'T00:00:00Z').toUTCString() + '</lastBuildDate>\n' : '') +

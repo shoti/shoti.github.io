@@ -43,6 +43,12 @@ Published posts are validated during the build. Their filename must match the
 `slug`, dates must be real `YYYY-MM-DD` calendar dates, and `tags` must be an
 array of strings.
 
+Posts may set `"lang": "ka"` for Georgian typography, page metadata, dates,
+and reading controls; omitted language defaults to English. Both languages
+support heading anchors and the automatic table of contents. The Markdown
+parser supports headings, lists, quotes, links, images, and fenced code (plus
+`flow` blocks), but not tables or footnotes; use short labelled lists instead.
+
 ## Structure
 
 ```
