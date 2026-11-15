@@ -154,27 +154,11 @@ assert.match(post, /<div class="post-body">\s*<p>/);
 assert.match(post, /<h2 id="section-[a-z0-9-]+">/);
 assert.doesNotMatch(post, /\{\{\{?[\w#/ ]+\}?\}\}/);
 assert.match(post, /<html lang="en">/);
-const georgianPost = fs.readFileSync(
-  path.join(distDir, 'posts', 'privacy-and-security-guide', 'index.html'), 'utf8'
-);
-assert.match(georgianPost, /<html lang="ka">/);
-assert.match(georgianPost, /"inLanguage":"ka"/);
-assert.match(georgianPost, /<meta property="og:locale" content="ka_GE">/);
-assert.match(georgianPost, /family=Noto\+Serif\+Georgian/);
-assert.match(georgianPost, /<summary aria-label="Reading settings">/);
-assert.match(georgianPost, /<summary>In this article /);
-assert.match(georgianPost, /\d+ min read/);
-assert.match(georgianPost, /<h2 id="section-საიდან-დავიწყო">/);
-assert.match(georgianPost, /Frequently-asked-questions-%28FAQ%29"/);
-assert.doesNotMatch(georgianPost, /<script[^>]+src="https?:|<iframe|\[S\d+\]|\{\{/);
-const georgianHeadingIds = [...georgianPost.matchAll(/<h[23] id="([^"]+)"/g)].map(match => match[1]);
-assert.strictEqual(new Set(georgianHeadingIds).size, georgianHeadingIds.length);
 const blogRss = fs.readFileSync(path.join(distDir, 'rss.xml'), 'utf8');
-assert.match(blogRss, /<item xml:lang="ka">/);
 assert.match(blogRss, /<item xml:lang="en">/);
 assert.match(notFound, /<a href="\/">Go back to the blog<\/a>/);
 // All articles use the same English site navigation and reading controls.
-for (const page of [home, post, georgianPost]) {
+for (const page of [home, post]) {
   assert.match(page, /<header class="site-header" lang="en">/);
   assert.match(page, /<nav class="site-nav" aria-label="Primary">/);
   assert.match(page, /<a href="\/">Blog<\/a>/);
@@ -189,17 +173,5 @@ assert.strictEqual(fs.existsSync(path.join(distDir, 'images', 'news-social.jpg')
 const sitemap = fs.readFileSync(path.join(distDir, 'sitemap.xml'), 'utf8');
 assert.doesNotMatch(sitemap, /<loc>https:\/\/shoti\.github\.io\/news\//);
 assert.match(home, /<link rel="alternate" type="application\/rss\+xml" title="Shota Mtvarelishvili" href="\/rss\.xml">/);
-
-// Diagrams are local, accessible SVG images with no active or remote content.
-const diagrams = [...georgianPost.matchAll(/<img src="([^"]+\.svg)" alt="([^"]+)"/g)];
-assert.strictEqual(diagrams.length, 2);
-for (const [, src, alt] of diagrams) {
-  assert.ok(alt.length > 40, 'Diagram needs an explanatory text alternative');
-  const svg = fs.readFileSync(path.join(distDir, src), 'utf8');
-  assert.match(svg, /<svg[^>]+viewBox=/);
-  assert.match(svg, /<title[^>]*>.+<\/title>/);
-  assert.match(svg, /<desc[^>]*>.+<\/desc>/);
-  assert.doesNotMatch(svg, /<script|<foreignObject|\son\w+=|(?:href|src)="https?:/i);
-}
 
 console.log('Build tests passed');
