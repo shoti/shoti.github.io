@@ -176,9 +176,17 @@ assert.match(post, /role="progressbar" lang="en" aria-label="Reading progress"/)
 assert.match(post, /<details class="reader-settings">/);
 assert.match(post, /<details lang="en" class="post-toc" id="post-toc">\s*<summary>Contents <span>\(\d+\)<\/span><\/summary>/);
 assert.match(post, /<ol lang="en"><li class="toc-level-2"><a href="#section-[^"]+">/);
+// The wide-screen outline is plain HTML so it shows even when scripts are blocked.
+assert.match(post, /<nav lang="en" class="post-outline" id="post-outline" aria-label="Table of contents">\s*<ol lang="en"><li class="toc-level-2">/);
+// Controls that need JavaScript are hidden until the head script marks <html class="js">.
+const css = fs.readFileSync(path.join(distDir, 'css', 'style.css'), 'utf8');
+assert.match(css, /\.theme-toggle \{\s*display: none;/);
+assert.match(css, /\.js \.theme-toggle \{\s*display: inline-grid;/);
+assert.doesNotMatch(css, /@view-transition/);
 assert.match(post, /<div class="reading-dock" id="reading-dock" lang="en" data-visible="false" data-reading-time="\d+">/);
 assert.match(post, /<dialog class="reading-sheet" id="reading-sheet"/);
-assert.match(home, /<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">/);
+// The browser keeps content out of system bars; drawing edge-to-edge hid the footer on Android.
+assert.match(home, /<meta name="viewport" content="width=device-width, initial-scale=1.0">/);
 assert.match(post, /<div class="post-body">\s*<p>/);
 assert.match(post, /<h2 id="section-[a-z0-9-]+">/);
 assert.doesNotMatch(post, /\{\{\{?[\w#/ ]+\}?\}\}/);

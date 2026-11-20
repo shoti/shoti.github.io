@@ -37,9 +37,12 @@
       </details>
     </div>
   </header>
-  {{#if toc}}<details lang="en" class="post-toc" id="post-toc">
+  {{#if toc}}<nav lang="en" class="post-outline" id="post-outline" aria-label="Table of contents">
+    <ol lang="{{postLang}}">{{{toc}}}</ol>
+  </nav>
+  <details lang="en" class="post-toc" id="post-toc">
     <summary>Contents <span>({{tocCount}})</span></summary>
-    <nav aria-label="Table of contents">
+    <nav aria-label="Contents">
       <ol lang="{{postLang}}">{{{toc}}}</ol>
     </nav>
   </details>{{/if}}
