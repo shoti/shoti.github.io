@@ -35,6 +35,7 @@ parser supports headings, lists, quotes, links, images, and fenced code (plus
 ```
 content/posts/*.json   Blog posts (JSON with Markdown body)
 content/about.json     About page content
+content/art/<slug>.svg Optional hero art for a post (inlined; styled by .hero-art classes)
 templates/             HTML templates
 static/                CSS, JS, favicon (copied to dist/)
 build.js               Build script (zero dependencies)

@@ -8,6 +8,7 @@ const {
   createNewPost,
   generateOgImage,
   loadAbout,
+  loadPostArt,
   loadPosts,
   parseMarkdown,
   parseMarkdownDocument,
@@ -15,6 +16,7 @@ const {
   renderTableOfContents,
   tableOfContentsEntries,
   serializeJsonForHtml,
+  validateArt,
   validatePost
 } = require('../build');
 
@@ -120,6 +122,14 @@ assert.throws(
   /filename must match slug/
 );
 
+// Hero art is inlined, so anything executable must be rejected at build time.
+assert.doesNotThrow(() => validateArt('<svg viewBox="0 0 1 1"><path d="M0 0"/></svg>', 'ok.svg'));
+assert.throws(() => validateArt('<div></div>', 'bad.svg'), /must start with an <svg> element/);
+assert.throws(() => validateArt('<svg><script>alert(1)</script></svg>', 'bad.svg'), /not allowed/);
+assert.throws(() => validateArt('<svg onload="alert(1)"></svg>', 'bad.svg'), /not allowed/);
+assert.throws(() => validateArt('<svg><foreignObject></foreignObject></svg>', 'bad.svg'), /not allowed/);
+assert.throws(() => validateArt('<svg><a href="javascript:alert(1)"/></svg>', 'bad.svg'), /not allowed/);
+
 const jsonForHtml = serializeJsonForHtml({ title: '</script><script>alert(1)</script>' });
 assert.doesNotMatch(jsonForHtml, /<\/script>/);
 assert.match(jsonForHtml, /\\u003c/);
@@ -142,6 +152,14 @@ try {
 
   fs.writeFileSync(path.join(postsDir, 'not-an-object.json'), 'null', 'utf8');
   assert.throws(() => loadPosts(postsDir), /expected a JSON object/);
+
+  const artDir = path.join(fixtureRoot, 'art');
+  fs.mkdirSync(artDir);
+  assert.strictEqual(loadPostArt('no-art-here', artDir), '');
+  fs.writeFileSync(path.join(artDir, 'has-art.svg'), '  <svg viewBox="0 0 1 1"></svg>\n', 'utf8');
+  assert.strictEqual(loadPostArt('has-art', artDir), '<svg viewBox="0 0 1 1"></svg>');
+  fs.writeFileSync(path.join(artDir, 'bad-art.svg'), '<svg onload="x()"></svg>', 'utf8');
+  assert.throws(() => loadPostArt('bad-art', artDir), /Invalid art bad-art\.svg/);
 
   const aboutFile = path.join(fixtureRoot, 'about.json');
   fs.writeFileSync(aboutFile, JSON.stringify({ heading: 'Missing body' }), 'utf8');
@@ -186,6 +204,13 @@ assert.match(post, /role="progressbar" lang="en" aria-label="Reading progress"/)
 assert.match(post, /<details class="reader-settings">/);
 assert.match(post, /<details lang="en" class="post-toc" id="post-toc">\s*<summary>Contents <span>\(\d+\)<\/span><\/summary>/);
 assert.match(post, /<ol lang="en"><li class="toc-level-2"><a href="#section-[^"]+">/);
+// Every current post ships its hero plate, inlined after the header.
+for (const { slug } of loadPosts()) {
+  const page = fs.readFileSync(path.join(distDir, 'posts', slug, 'index.html'), 'utf8');
+  assert.match(page, /<\/header>\s*<figure class="post-hero"><svg xmlns="http:\/\/www\.w3\.org\/2000\/svg"[^>]* aria-hidden="true"/,
+    'Post ' + slug + ' must include its hero art');
+}
+
 // The wide-screen outline is plain HTML so it shows even when scripts are blocked.
 assert.match(post, /<nav lang="en" class="post-outline" id="post-outline" aria-label="Table of contents">\s*<ol lang="en"><li class="toc-level-2">/);
 // Controls that need JavaScript are hidden until the head script marks <html class="js">.

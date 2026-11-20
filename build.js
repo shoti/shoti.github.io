@@ -7,6 +7,7 @@ const path = require('path');
 
 const BASE_URL = 'https://shoti.github.io';
 const POSTS_DIR = path.join(__dirname, 'content', 'posts');
+const ART_DIR = path.join(__dirname, 'content', 'art');
 const TEMPLATES_DIR = path.join(__dirname, 'templates');
 const STATIC_DIR = path.join(__dirname, 'static');
 const DIST_DIR = path.join(__dirname, 'dist');
@@ -455,6 +456,28 @@ function validatePost(post, filename) {
   }
 }
 
+// --- Post Art ---
+
+// Hero art is inlined so it can use the theme's CSS variables. It is trusted repo
+// content, but refuse anything executable so a bad file can never ship script.
+function validateArt(svg, label) {
+  if (!/^<svg[\s>]/.test(svg)) {
+    throw new Error('Invalid art ' + label + ': file must start with an <svg> element');
+  }
+  if (/<script|<foreignObject|\son[a-z]+\s*=|javascript:/i.test(svg)) {
+    throw new Error('Invalid art ' + label + ': scripts, event handlers and foreignObject are not allowed');
+  }
+}
+
+// content/art/<slug>.svg, or '' when the post has no art.
+function loadPostArt(slug, artDir = ART_DIR) {
+  const filePath = path.join(artDir, slug + '.svg');
+  if (!fs.existsSync(filePath)) return '';
+  const svg = fs.readFileSync(filePath, 'utf-8').trim();
+  validateArt(svg, path.basename(filePath));
+  return svg;
+}
+
 // --- New Post Command ---
 
 function createNewPost(titleParts, postsDir = POSTS_DIR) {
@@ -671,6 +694,7 @@ posts.forEach((post, idx) => {
     readingTime: readingTime(post._words),
     tags: tags,
     body: post._html,
+    hero: loadPostArt(post.slug),
     toc: renderTableOfContents(post._tocEntries),
     tocCount: post._tocEntries.length,
     prevPost: prevPost ? true : false,
@@ -807,6 +831,7 @@ module.exports = {
   createNewPost,
   generateOgImage,
   loadAbout,
+  loadPostArt,
   loadPosts,
   parseMarkdown,
   parseMarkdownDocument,
@@ -814,5 +839,6 @@ module.exports = {
   renderTableOfContents,
   tableOfContentsEntries,
   serializeJsonForHtml,
+  validateArt,
   validatePost
 };
