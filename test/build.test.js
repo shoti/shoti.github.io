@@ -10,7 +10,10 @@ const {
   loadAbout,
   loadPosts,
   parseMarkdown,
+  parseMarkdownDocument,
   render,
+  renderTableOfContents,
+  tableOfContentsEntries,
   serializeJsonForHtml,
   validatePost
 } = require('../build');
@@ -33,6 +36,28 @@ assert.match(parseMarkdown('## Main Content'), /^<h2 id="section-main-content">/
 assert.strictEqual(
   parseMarkdown('## ანგარიშების დაცვა\n\n## ანგარიშების დაცვა'),
   '<h2 id="section-ანგარიშების-დაცვა">ანგარიშების დაცვა</h2>\n<h2 id="section-ანგარიშების-დაცვა-2">ანგარიშების დაცვა</h2>'
+);
+
+// The table of contents is built at build time from h2/h3 headings only.
+const outlined = parseMarkdownDocument('## First `step`\n\n### Detail\n\n#### Too deep\n\n## ანგარიშების დაცვა\n\n## First `step`');
+assert.deepStrictEqual(outlined.headings.map(heading => [heading.level, heading.id, heading.title]), [
+  [2, 'section-first-step', 'First step'],
+  [3, 'section-detail', 'Detail'],
+  [4, 'section-too-deep', 'Too deep'],
+  [2, 'section-ანგარიშების-დაცვა', 'ანგარიშების დაცვა'],
+  [2, 'section-first-step-2', 'First step']
+]);
+const outlineEntries = tableOfContentsEntries(outlined.headings);
+assert.strictEqual(outlineEntries.length, 4);
+assert.strictEqual(
+  renderTableOfContents(outlineEntries.slice(0, 2)),
+  '<li class="toc-level-2"><a href="#section-first-step">First step</a></li>' +
+  '<li class="toc-level-3"><a href="#section-detail">Detail</a></li>'
+);
+assert.deepStrictEqual(tableOfContentsEntries(parseMarkdownDocument('## One\n\n## Two').headings), []);
+assert.strictEqual(
+  parseMarkdownDocument('## <img src=x onerror=alert(1)>\n\n## b\n\n## c').headings[0].title,
+  '&lt;img src=x onerror=alert(1)&gt;'
 );
 
 // Excessive blockquote nesting must degrade to text instead of hanging.
@@ -149,7 +174,11 @@ assert.match(post, /<span class="reading-time">\d+ min read<\/span>/);
 assert.doesNotMatch(post, /<meta property="og:image:(?:type|width|height|alt)" content="">/);
 assert.match(post, /role="progressbar" lang="en" aria-label="Reading progress"/);
 assert.match(post, /<details class="reader-settings">/);
-assert.match(post, /<details lang="en" class="post-toc" id="post-toc" hidden>/);
+assert.match(post, /<details lang="en" class="post-toc" id="post-toc">\s*<summary>Contents <span>\(\d+\)<\/span><\/summary>/);
+assert.match(post, /<ol lang="en"><li class="toc-level-2"><a href="#section-[^"]+">/);
+assert.match(post, /<div class="reading-dock" id="reading-dock" lang="en" data-visible="false" data-reading-time="\d+">/);
+assert.match(post, /<dialog class="reading-sheet" id="reading-sheet"/);
+assert.match(home, /<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">/);
 assert.match(post, /<div class="post-body">\s*<p>/);
 assert.match(post, /<h2 id="section-[a-z0-9-]+">/);
 assert.doesNotMatch(post, /\{\{\{?[\w#/ ]+\}?\}\}/);
