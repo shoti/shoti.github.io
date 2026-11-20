@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
@@ -369,6 +370,13 @@ function copyDir(src, dest) {
   }
 }
 
+// URL that changes whenever the file's content changes. GitHub Pages caches assets
+// for 10 minutes, so a fixed URL can pair freshly deployed HTML with stale CSS/JS.
+function versionedAssetUrl(urlPath, filePath) {
+  const hash = crypto.createHash('sha256').update(fs.readFileSync(filePath)).digest('hex').slice(0, 10);
+  return urlPath + '?v=' + hash;
+}
+
 function writeFile(filePath, content) {
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
   fs.writeFileSync(filePath, content, 'utf-8');
@@ -561,6 +569,9 @@ const FONT_HREF_GEORGIAN = FONT_HREF_LATIN.replace('&display=swap', '') +
 // Post titles in lists are set in the serif, so Georgian titles need both Georgian faces.
 const FONT_HREF_POST_LIST = posts.some(post => post.lang === 'ka') ? FONT_HREF_GEORGIAN : FONT_HREF_LATIN;
 
+const CSS_HREF = versionedAssetUrl('/css/style.css', path.join(STATIC_DIR, 'css', 'style.css'));
+const JS_HREF = versionedAssetUrl('/js/main.js', path.join(STATIC_DIR, 'js', 'main.js'));
+
 function wrapInBase(content, data) {
   return render(baseTemplate, Object.assign({
     content: content,
@@ -573,6 +584,8 @@ function wrapInBase(content, data) {
     sourceLabel: 'Source',
     progressLabel: 'Reading progress',
     robots: '',
+    cssHref: CSS_HREF,
+    jsHref: JS_HREF,
     fontHref: FONT_HREF_LATIN
   }, data));
 }

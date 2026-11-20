@@ -161,7 +161,17 @@ const post = fs.readFileSync(
 const notFound = fs.readFileSync(path.join(distDir, '404.html'), 'utf8');
 const themeBootstrapIndex = home.indexOf("localStorage.getItem('theme')");
 const readerBootstrapIndex = home.indexOf("localStorage.getItem('reader-' + setting)");
-const stylesheetIndex = home.indexOf('<link rel="stylesheet" href="/css/style.css">');
+// Asset URLs carry a content hash so new HTML is never paired with a cached old stylesheet.
+const crypto = require('crypto');
+const assetHash = file => crypto.createHash('sha256')
+  .update(fs.readFileSync(path.join(__dirname, '..', 'static', file))).digest('hex').slice(0, 10);
+const stylesheetTag = '<link rel="stylesheet" href="/css/style.css?v=' + assetHash('css/style.css') + '">';
+for (const page of [home, post, notFound]) {
+  assert.ok(page.includes(stylesheetTag), 'Pages must link the content-hashed stylesheet');
+  assert.ok(page.includes('<script src="/js/main.js?v=' + assetHash('js/main.js') + '"></script>'),
+    'Pages must load the content-hashed script');
+}
+const stylesheetIndex = home.indexOf(stylesheetTag);
 assert.ok(themeBootstrapIndex !== -1 && themeBootstrapIndex < stylesheetIndex,
   'Stored theme must be applied before the stylesheet to prevent a theme flash');
 assert.ok(readerBootstrapIndex !== -1 && readerBootstrapIndex < stylesheetIndex,
