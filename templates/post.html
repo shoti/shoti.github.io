@@ -37,6 +37,7 @@
       </details>
     </div>
   </header>
+  {{#if hero}}<figure class="post-hero">{{{hero}}}</figure>{{/if}}
   {{#if toc}}<nav lang="en" class="post-outline" id="post-outline" aria-label="Table of contents">
     <ol lang="{{postLang}}">{{{toc}}}</ol>
   </nav>

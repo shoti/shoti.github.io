@@ -511,6 +511,70 @@ main {
   color: var(--faint);
 }
 
+/* --- Hero art (content/art/<slug>.svg, inlined so it follows the theme) --- */
+
+.post-hero {
+  margin: -0.5rem 0 3rem;
+}
+
+.post-hero svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.hero-art .a-ink { stroke: var(--text); }
+.hero-art .a-mute { stroke: var(--muted); }
+.hero-art .a-faint { stroke: var(--faint); }
+.hero-art .a-rule { stroke: var(--rule); }
+.hero-art .a-accent { stroke: var(--accent); }
+.hero-art .a-dot { fill: var(--faint); opacity: 0.55; }
+.hero-art .a-fill-bg { fill: var(--bg); }
+.hero-art .a-fill-surface { fill: var(--surface); }
+.hero-art .a-fill-ink { fill: var(--text); }
+.hero-art .a-fill-accent { fill: var(--accent-soft); }
+.hero-art .a-fill-accent-solid { fill: var(--accent); }
+
+.hero-art .a-label,
+.hero-art .a-prompt {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+}
+
+.hero-art .a-label {
+  fill: var(--faint);
+}
+
+.hero-art .a-prompt {
+  fill: var(--accent);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* The accent "line of intent" draws itself once; markers fade in as it lands. */
+.hero-art .a-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: art-draw 1.6s var(--ease) 0.2s forwards;
+}
+
+.hero-art .a-fade {
+  opacity: 0;
+  animation: art-fade 0.5s ease 1.4s forwards;
+}
+
+@keyframes art-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes art-fade {
+  to { opacity: 1; }
+}
+
 /* --- Table of contents ---
    Narrow screens: a quiet disclosure above the article.
    Wide screens: pinned in the left margin with the current section marked. */
@@ -627,6 +691,11 @@ main {
     overflow-y: auto;
     font-size: 0.8125rem;
     scrollbar-width: none;
+  }
+
+  /* With hero art, the outline starts beside the article text, not the art. */
+  .post-hero + .post-outline {
+    grid-row: 3 / span 3;
   }
 
   .post-outline ol {
@@ -1297,6 +1366,16 @@ main {
 
   .post-header {
     margin: 3rem 0 2.5rem;
+  }
+
+  .post-hero {
+    margin-bottom: 2.25rem;
+  }
+
+  /* Plate labels would be ~5px here: keep the drawing, drop the captions. */
+  .hero-art .a-label,
+  .hero-art .a-prompt {
+    display: none;
   }
 
   .post-body,
