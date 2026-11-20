@@ -93,30 +93,6 @@ function readerControlState(preferences) {
   };
 }
 
-function slugifyHeading(text) {
-  const slug = String(text)
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}]+/gu, '-')
-    .replace(/^-+|-+$/g, '');
-  return slug || 'section';
-}
-
-function createTableOfContentsEntries(headings) {
-  const counts = new Map();
-  return headings.map(heading => {
-    const base = heading.id || `section-${slugifyHeading(heading.title)}`;
-    const count = (counts.get(base) || 0) + 1;
-    counts.set(base, count);
-    return {
-      id: count === 1 ? base : `${base}-${count}`,
-      level: heading.level === 3 ? 3 : 2,
-      title: String(heading.title).trim()
-    };
-  });
-}
-
 function shouldDismissReaderSettings(readerSettings, target) {
   return Boolean(readerSettings?.open && !readerSettings.contains(target));
 }
@@ -126,36 +102,6 @@ function dismissReaderSettings(readerSettings, restoreFocus = false) {
   readerSettings.open = false;
   if (restoreFocus) readerSettings.querySelector('summary')?.focus();
   return true;
-}
-
-function initializeTableOfContents(container, articleBody) {
-  if (!container || !articleBody) return [];
-  const headings = Array.from(articleBody.querySelectorAll('h2, h3'));
-  if (headings.length < 3) return [];
-
-  const entries = createTableOfContentsEntries(headings.map(heading => ({
-    id: heading.id,
-    level: Number(heading.tagName.slice(1)),
-    title: heading.textContent
-  })));
-  const list = container.querySelector('#post-toc-list');
-  const count = container.querySelector('#post-toc-count');
-  if (!list || !count) return [];
-
-  for (let index = 0; index < entries.length; index++) {
-    const entry = entries[index];
-    headings[index].id = entry.id;
-    const item = document.createElement('li');
-    item.className = `toc-level-${entry.level}`;
-    const link = document.createElement('a');
-    link.href = `#${entry.id}`;
-    link.textContent = entry.title;
-    item.appendChild(link);
-    list.appendChild(item);
-  }
-  count.textContent = `(${entries.length})`;
-  container.hidden = false;
-  return entries;
 }
 
 // Index of the section being read: the last heading whose top has scrolled past the
@@ -174,6 +120,22 @@ function markActiveTocLink(links, activeIndex) {
     if (index === activeIndex) link.setAttribute('aria-current', 'location');
     else link.removeAttribute('aria-current');
   });
+}
+
+// The mobile reading dock stays out of the way while reading forward and comes
+// back when the reader scrolls up — but only between the article start and end.
+const DOCK_SCROLL_THRESHOLD = 6;
+
+function shouldShowReadingDock({ scrollY, previousScrollY, start, end, visible }) {
+  if (scrollY < start || scrollY > end) return false;
+  const delta = scrollY - previousScrollY;
+  if (Math.abs(delta) < DOCK_SCROLL_THRESHOLD) return visible;
+  return delta < 0;
+}
+
+function minutesLeft(readingTime, progress) {
+  const remaining = Math.ceil(readingTime * (1 - progress / 100));
+  return Math.max(0, Math.min(readingTime, remaining));
 }
 
 // Radius that lets a circle centred on (x, y) cover the whole viewport.
@@ -237,6 +199,115 @@ function createFrameScheduler(callback, scheduleFrame = requestAnimationFrame) {
   };
 }
 
+// Progress bar, active section and reading dock share one scroll listener. Layout is
+// measured only when the article resizes (fonts, reader settings, viewport), so the
+// per-frame work is arithmetic plus a few writes — no layout reads while scrolling.
+function initializeReadingTracker(article, bar) {
+  const toc = document.getElementById('post-toc');
+  const dock = document.getElementById('reading-dock');
+  const sheet = document.getElementById('reading-sheet');
+  const body = article.querySelector('.post-body');
+  const footer = article.querySelector('.post-footer');
+  const tocLinks = toc ? Array.from(toc.querySelectorAll('a')) : [];
+  const sheetLinks = sheet ? Array.from(sheet.querySelectorAll('.reading-sheet-list a')) : [];
+  const headings = tocLinks.map(link => document.getElementById(link.getAttribute('href').slice(1)));
+  const hasOutline = headings.length > 0 && headings.every(Boolean);
+  const dockSection = document.getElementById('reading-dock-section');
+  const dockLeft = document.getElementById('reading-dock-left');
+  const readingTime = Number(dock?.dataset.readingTime) || 1;
+
+  const metrics = { top: 0, height: 0, headingTops: [], dockStart: 0, dockEnd: 0 };
+  const measure = () => {
+    const y = scrollY;
+    const rect = article.getBoundingClientRect();
+    metrics.top = rect.top + y;
+    metrics.height = rect.height;
+    metrics.headingTops = hasOutline ? headings.map(heading => heading.getBoundingClientRect().top + y) : [];
+    metrics.dockStart = body ? body.getBoundingClientRect().top + y : metrics.top;
+    metrics.dockEnd = (footer ? footer.getBoundingClientRect().top + y : metrics.top + metrics.height) - innerHeight;
+  };
+
+  let activeIndex = null;
+  let previousY = scrollY;
+  let dockVisible = false;
+  let shownMinutes = null;
+  let shownProgress = null;
+
+  const render = () => {
+    const y = scrollY;
+    const progress = updateReadingProgressBar(
+      bar,
+      { offsetTop: metrics.top, offsetHeight: metrics.height },
+      y,
+      innerHeight,
+      0
+    );
+
+    if (hasOutline) {
+      const nextIndex = findActiveHeadingIndex(metrics.headingTops, y + innerHeight * 0.3);
+      if (nextIndex !== activeIndex) {
+        activeIndex = nextIndex;
+        markActiveTocLink(tocLinks, activeIndex);
+        markActiveTocLink(sheetLinks, activeIndex);
+        if (dockSection) dockSection.textContent = activeIndex >= 0 ? tocLinks[activeIndex].textContent : 'Contents';
+      }
+    }
+
+    if (dock) {
+      const roundedProgress = Math.round(progress);
+      if (roundedProgress !== shownProgress) {
+        shownProgress = roundedProgress;
+        dock.style.setProperty('--progress', String(roundedProgress));
+      }
+      const minutes = minutesLeft(readingTime, progress);
+      if (minutes !== shownMinutes && dockLeft) {
+        shownMinutes = minutes;
+        dockLeft.textContent = minutes > 0 ? `${minutes} min left` : 'Done';
+      }
+      const visible = Boolean(sheet?.open) || shouldShowReadingDock({
+        scrollY: y,
+        previousScrollY: previousY,
+        start: metrics.dockStart,
+        end: metrics.dockEnd,
+        visible: dockVisible
+      });
+      if (visible !== dockVisible) {
+        dockVisible = visible;
+        dock.dataset.visible = String(visible);
+      }
+    }
+    previousY = y;
+  };
+
+  const queueRender = createFrameScheduler(render);
+  const queueRemeasure = createFrameScheduler(() => {
+    measure();
+    render();
+  });
+  window.addEventListener('scroll', queueRender, { passive: true });
+  window.addEventListener('resize', queueRemeasure);
+  if (typeof ResizeObserver === 'function') new ResizeObserver(queueRemeasure).observe(article);
+  measure();
+  render();
+
+  if (!dock || !sheet) return;
+  dock.querySelector('button')?.addEventListener('click', () => {
+    sheet.showModal();
+    sheet.querySelector('[aria-current="location"]')?.scrollIntoView({ block: 'center' });
+  });
+  sheet.querySelector('.reading-sheet-close')?.addEventListener('click', () => sheet.close());
+  sheet.querySelector('.reading-sheet-top')?.addEventListener('click', () => {
+    sheet.close();
+    scrollTo({ top: 0 });
+  });
+  sheet.addEventListener('click', event => {
+    // Taps on the backdrop land on the dialog itself, above its top edge.
+    if (event.target === sheet && event.clientY < sheet.getBoundingClientRect().top) sheet.close();
+    // Following a section link closes the sheet; the browser then scrolls to it.
+    else if (event.target.closest('a')) sheet.close();
+  });
+}
+
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', () => {
     const root = document.documentElement;
@@ -262,10 +333,18 @@ if (typeof document !== 'undefined') {
 
     const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
+    // Keep the mobile browser chrome the same colour as the page.
+    const syncThemeColor = () => {
+      const color = getComputedStyle(root).getPropertyValue('--bg').trim();
+      for (const meta of document.querySelectorAll('meta[name="theme-color"]')) meta.content = color;
+    };
+    if (stored) syncThemeColor();
+
     const applyTheme = theme => {
       root.setAttribute('data-theme', theme);
       writeStoredTheme(theme);
       updateThemeControl();
+      syncThemeColor();
     };
 
     // Where supported, the new theme grows out of the toggle as a circle.
@@ -368,24 +447,13 @@ if (typeof document !== 'undefined') {
     });
     syncReaderControls();
 
-    // Article outline
+    // Wide screens pin the outline in the margin, always expanded.
     const toc = document.getElementById('post-toc');
-    const tocEntries = initializeTableOfContents(toc, document.querySelector('.post-body'));
-    if (tocEntries.length > 0) {
-      // Wide screens pin the outline in the margin, always expanded.
+    if (toc) {
       const wideLayout = matchMedia('(min-width: 78rem)');
       const syncTocLayout = () => { toc.open = wideLayout.matches; };
       syncTocLayout();
       subscribeToMediaChanges(wideLayout, syncTocLayout);
-
-      const tocHeadings = tocEntries.map(entry => document.getElementById(entry.id));
-      const tocLinks = Array.from(toc.querySelectorAll('a'));
-      const updateActiveSection = () => markActiveTocLink(tocLinks, findActiveHeadingIndex(
-        tocHeadings.map(heading => heading.getBoundingClientRect().top),
-        innerHeight * 0.3
-      ));
-      window.addEventListener('scroll', createFrameScheduler(updateActiveSection), { passive: true });
-      updateActiveSection();
     }
 
     // Active nav link
@@ -398,23 +466,10 @@ if (typeof document !== 'undefined') {
       }
     }
 
-    // Reading progress bar
+    // Reading progress, active section and reading dock
     const bar = document.getElementById('reading-progress');
-    if (bar) {
-      const article = document.querySelector('.post');
-      const updateReadingProgress = () => updateReadingProgressBar(
-        bar,
-        article,
-        scrollY,
-        innerHeight,
-        document.documentElement.scrollHeight
-      );
-      const queueReadingProgressUpdate = createFrameScheduler(updateReadingProgress);
-      window.addEventListener('scroll', queueReadingProgressUpdate, { passive: true });
-      window.addEventListener('resize', updateReadingProgress);
-      updateReadingProgress();
-    }
-
+    const article = document.querySelector('.post');
+    if (bar && article) initializeReadingTracker(article, bar);
   });
 }
 
@@ -422,20 +477,19 @@ if (typeof module !== 'undefined') {
   module.exports = {
     applyReaderPreferences,
     calculateReadingProgress,
-    createTableOfContentsEntries,
     createFrameScheduler,
     dismissReaderSettings,
     findActiveHeadingIndex,
-    initializeTableOfContents,
     isNavActive,
     markActiveTocLink,
+    minutesLeft,
     normalizeReaderPreferences,
     readReaderPreferences,
     readStoredTheme,
     readerControlState,
     resolveTheme,
     shouldDismissReaderSettings,
-    slugifyHeading,
+    shouldShowReadingDock,
     stepReaderSize,
     subscribeToMediaChanges,
     themeControlState,

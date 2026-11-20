@@ -15,10 +15,32 @@ const REQUIRED_POST_FIELDS = ['title', 'slug', 'date', 'description', 'body', 't
 // --- Minimal Markdown Parser ---
 
 function parseMarkdown(text) {
+  return parseMarkdownDocument(text).html;
+}
+
+// Parses Markdown and also returns the headings it produced, so the table of
+// contents can be rendered at build time (no client-side layout shift).
+function parseMarkdownDocument(text) {
   if (typeof text !== 'string') {
     throw new TypeError('Markdown content must be a string');
   }
-  return parseMarkdownInner(text, 0, new Map());
+  const headings = [];
+  const html = parseMarkdownInner(text, 0, new Map(), headings);
+  return { html, headings };
+}
+
+const MIN_TOC_HEADINGS = 3;
+
+// Headings shown in the post outline (h2/h3 only); none when the post is too short to need one.
+function tableOfContentsEntries(headings) {
+  const entries = headings.filter(heading => heading.level === 2 || heading.level === 3);
+  return entries.length >= MIN_TOC_HEADINGS ? entries : [];
+}
+
+function renderTableOfContents(entries) {
+  return entries
+    .map(heading => '<li class="toc-level-' + heading.level + '"><a href="#' + heading.id + '">' + heading.title + '</a></li>')
+    .join('');
 }
 
 function slugifyHeading(text) {
@@ -48,7 +70,7 @@ function isBlockStart(line, depth) {
     /^(-{3,}|\*{3,}|_{3,})$/.test(trimmed);
 }
 
-function parseMarkdownInner(text, depth, headingCounts) {
+function parseMarkdownInner(text, depth, headingCounts, headings) {
   const lines = text.split('\n');
   const html = [];
   let i = 0;
@@ -91,6 +113,8 @@ function parseMarkdownInner(text, depth, headingCounts) {
     if (headingMatch) {
       const level = headingMatch[1].length;
       const id = uniqueHeadingId(headingMatch[2], headingCounts);
+      // Inline markup is escaped first, so stripping the generated tags leaves safe plain text.
+      headings.push({ id, level, title: inline(headingMatch[2]).replace(/<[^>]+>/g, '') });
       html.push('<h' + level + ' id="' + id + '">' + inline(headingMatch[2]) + '</h' + level + '>');
       i++;
       continue;
@@ -110,7 +134,7 @@ function parseMarkdownInner(text, depth, headingCounts) {
         quoteLines.push(lines[i].trim().slice(2));
         i++;
       }
-      html.push('<blockquote>' + parseMarkdownInner(quoteLines.join('\n'), depth + 1, headingCounts) + '</blockquote>');
+      html.push('<blockquote>' + parseMarkdownInner(quoteLines.join('\n'), depth + 1, headingCounts, headings) + '</blockquote>');
       continue;
     }
 
@@ -512,7 +536,9 @@ const posts = loadPosts();
 
 // Parse markdown once per post and cache the HTML
 for (const post of posts) {
-  post._html = parseMarkdown(post.body);
+  const parsed = parseMarkdownDocument(post.body);
+  post._html = parsed.html;
+  post._tocEntries = tableOfContentsEntries(parsed.headings);
   post._words = wordCount(post.body);
 }
 
@@ -632,6 +658,8 @@ posts.forEach((post, idx) => {
     readingTime: readingTime(post._words),
     tags: tags,
     body: post._html,
+    toc: renderTableOfContents(post._tocEntries),
+    tocCount: post._tocEntries.length,
     prevPost: prevPost ? true : false,
     prevSlug: prevPost ? prevPost.slug : '',
     prevTitle: prevPost ? prevPost.title : '',
@@ -768,7 +796,10 @@ module.exports = {
   loadAbout,
   loadPosts,
   parseMarkdown,
+  parseMarkdownDocument,
   render,
+  renderTableOfContents,
+  tableOfContentsEntries,
   serializeJsonForHtml,
   validatePost
 };

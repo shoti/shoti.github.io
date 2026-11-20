@@ -4,20 +4,19 @@ const assert = require('assert');
 const {
   applyReaderPreferences,
   calculateReadingProgress,
-  createTableOfContentsEntries,
   createFrameScheduler,
   dismissReaderSettings,
   findActiveHeadingIndex,
-  initializeTableOfContents,
   isNavActive,
   markActiveTocLink,
+  minutesLeft,
   normalizeReaderPreferences,
   readReaderPreferences,
   readStoredTheme,
   readerControlState,
   resolveTheme,
   shouldDismissReaderSettings,
-  slugifyHeading,
+  shouldShowReadingDock,
   stepReaderSize,
   subscribeToMediaChanges,
   themeControlState,
@@ -94,79 +93,6 @@ assert.deepStrictEqual(readerControlState({ font: 'serif', size: 'medium', spaci
   canIncrease: true
 });
 
-assert.strictEqual(slugifyHeading('A Better Reading Experience!'), 'a-better-reading-experience');
-assert.strictEqual(slugifyHeading('...'), 'section');
-assert.strictEqual(slugifyHeading('ანგარიშების დაცვა!'), 'ანგარიშების-დაცვა');
-assert.deepStrictEqual(createTableOfContentsEntries([
-  { level: 2, title: 'ანგარიშების დაცვა' },
-  { level: 3, title: 'ანგარიშების დაცვა' }
-]), [
-  { id: 'section-ანგარიშების-დაცვა', level: 2, title: 'ანგარიშების დაცვა' },
-  { id: 'section-ანგარიშების-დაცვა-2', level: 3, title: 'ანგარიშების დაცვა' }
-]);
-assert.deepStrictEqual(createTableOfContentsEntries([
-  { level: 2, title: 'Why this matters' },
-  { level: 3, title: 'The details' },
-  { level: 2, title: 'Why this matters' }
-]), [
-  { id: 'section-why-this-matters', level: 2, title: 'Why this matters' },
-  { id: 'section-the-details', level: 3, title: 'The details' },
-  { id: 'section-why-this-matters-2', level: 2, title: 'Why this matters' }
-]);
-assert.deepStrictEqual(createTableOfContentsEntries([
-  { id: 'section-existing-anchor', level: 2, title: 'Different text' }
-]), [
-  { id: 'section-existing-anchor', level: 2, title: 'Different text' }
-]);
-
-const fakeHeadings = [
-  { id: 'section-first', tagName: 'H2', textContent: 'First' },
-  { id: 'section-detail', tagName: 'H3', textContent: 'Detail' },
-  { id: 'section-last', tagName: 'H2', textContent: 'Last' }
-];
-const fakeList = {
-  children: [],
-  appendChild(child) { this.children.push(child); }
-};
-const fakeCount = { textContent: '' };
-const fakeContainer = {
-  hidden: true,
-  querySelector: selector => ({
-    '#post-toc-list': fakeList,
-    '#post-toc-count': fakeCount
-  })[selector] || null
-};
-const originalDocument = global.document;
-global.document = {
-  createElement: tagName => ({
-    tagName,
-    children: [],
-    appendChild(child) { this.children.push(child); }
-  })
-};
-try {
-  const initializedEntries = initializeTableOfContents(
-    fakeContainer,
-    { querySelectorAll: () => fakeHeadings }
-  );
-  assert.strictEqual(initializedEntries.length, 3);
-  assert.strictEqual(fakeContainer.hidden, false);
-  assert.strictEqual(fakeCount.textContent, '(3)');
-  assert.strictEqual(fakeList.children.length, 3);
-  assert.strictEqual(fakeList.children[0].className, 'toc-level-2');
-  assert.strictEqual(fakeList.children[0].children[0].href, '#section-first');
-  assert.strictEqual(fakeList.children[0].children[0].textContent, 'First');
-
-  const shortContainer = { hidden: true };
-  assert.deepStrictEqual(initializeTableOfContents(
-    shortContainer,
-    { querySelectorAll: () => fakeHeadings.slice(0, 2) }
-  ), []);
-  assert.strictEqual(shortContainer.hidden, true);
-} finally {
-  if (originalDocument === undefined) delete global.document;
-  else global.document = originalDocument;
-}
 
 let summaryFocused = false;
 const readerSettings = {
@@ -268,5 +194,21 @@ assert.deepStrictEqual(tocLinkAttributes, [{}, {}, {}]);
 assert.strictEqual(themeRevealRadius(0, 0, 3, 4), 5);
 assert.strictEqual(themeRevealRadius(3, 4, 3, 4), 5);
 assert.strictEqual(themeRevealRadius(100, 50, 400, 300), Math.hypot(300, 250));
+
+const dockRange = { start: 500, end: 5000 };
+// Outside the article the dock is always hidden.
+assert.strictEqual(shouldShowReadingDock({ ...dockRange, scrollY: 100, previousScrollY: 200, visible: true }), false);
+assert.strictEqual(shouldShowReadingDock({ ...dockRange, scrollY: 5200, previousScrollY: 5300, visible: true }), false);
+// Scrolling up reveals it, scrolling down hides it, jitter keeps the current state.
+assert.strictEqual(shouldShowReadingDock({ ...dockRange, scrollY: 1000, previousScrollY: 1040, visible: false }), true);
+assert.strictEqual(shouldShowReadingDock({ ...dockRange, scrollY: 1040, previousScrollY: 1000, visible: true }), false);
+assert.strictEqual(shouldShowReadingDock({ ...dockRange, scrollY: 1003, previousScrollY: 1000, visible: true }), true);
+assert.strictEqual(shouldShowReadingDock({ ...dockRange, scrollY: 997, previousScrollY: 1000, visible: false }), false);
+
+assert.strictEqual(minutesLeft(10, 0), 10);
+assert.strictEqual(minutesLeft(10, 45), 6);
+assert.strictEqual(minutesLeft(10, 100), 0);
+assert.strictEqual(minutesLeft(10, -20), 10);
+assert.strictEqual(minutesLeft(1, 99), 1);
 
 console.log('Client tests passed');
