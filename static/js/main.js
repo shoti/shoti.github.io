@@ -203,14 +203,16 @@ function createFrameScheduler(callback, scheduleFrame = requestAnimationFrame) {
 // measured only when the article resizes (fonts, reader settings, viewport), so the
 // per-frame work is arithmetic plus a few writes — no layout reads while scrolling.
 function initializeReadingTracker(article, bar) {
+  const outline = document.getElementById('post-outline');
   const toc = document.getElementById('post-toc');
   const dock = document.getElementById('reading-dock');
   const sheet = document.getElementById('reading-sheet');
   const body = article.querySelector('.post-body');
   const footer = article.querySelector('.post-footer');
+  const outlineLinks = outline ? Array.from(outline.querySelectorAll('a')) : [];
   const tocLinks = toc ? Array.from(toc.querySelectorAll('a')) : [];
   const sheetLinks = sheet ? Array.from(sheet.querySelectorAll('.reading-sheet-list a')) : [];
-  const headings = tocLinks.map(link => document.getElementById(link.getAttribute('href').slice(1)));
+  const headings = outlineLinks.map(link => document.getElementById(link.getAttribute('href').slice(1)));
   const hasOutline = headings.length > 0 && headings.every(Boolean);
   const dockSection = document.getElementById('reading-dock-section');
   const dockLeft = document.getElementById('reading-dock-left');
@@ -247,9 +249,8 @@ function initializeReadingTracker(article, bar) {
       const nextIndex = findActiveHeadingIndex(metrics.headingTops, y + innerHeight * 0.3);
       if (nextIndex !== activeIndex) {
         activeIndex = nextIndex;
-        markActiveTocLink(tocLinks, activeIndex);
-        markActiveTocLink(sheetLinks, activeIndex);
-        if (dockSection) dockSection.textContent = activeIndex >= 0 ? tocLinks[activeIndex].textContent : 'Contents';
+        for (const links of [outlineLinks, tocLinks, sheetLinks]) markActiveTocLink(links, activeIndex);
+        if (dockSection) dockSection.textContent = activeIndex >= 0 ? outlineLinks[activeIndex].textContent : 'Contents';
       }
     }
 
@@ -446,15 +447,6 @@ if (typeof document !== 'undefined') {
       if (event.relatedTarget && !readerSettings.contains(event.relatedTarget)) dismissReaderSettings(readerSettings);
     });
     syncReaderControls();
-
-    // Wide screens pin the outline in the margin, always expanded.
-    const toc = document.getElementById('post-toc');
-    if (toc) {
-      const wideLayout = matchMedia('(min-width: 78rem)');
-      const syncTocLayout = () => { toc.open = wideLayout.matches; };
-      syncTocLayout();
-      subscribeToMediaChanges(wideLayout, syncTocLayout);
-    }
 
     // Active nav link
     const { pathname } = location;

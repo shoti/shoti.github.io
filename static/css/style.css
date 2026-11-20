@@ -19,7 +19,7 @@
   --font-mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
 
   --measure: 40rem;
-  /* Never let text run under a notch or rounded corner (viewport-fit=cover). */
+  /* Insets are non-zero only where the browser reports them (e.g. landscape notches). */
   --gutter: max(1.5rem, env(safe-area-inset-left), env(safe-area-inset-right));
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 
@@ -154,7 +154,6 @@ main {
   justify-content: space-between;
   gap: 1rem;
   padding: 1.75rem 0;
-  view-transition-name: site-header;
 }
 
 .site-name {
@@ -173,11 +172,6 @@ main {
   height: 0.5rem;
   border-radius: 50%;
   background: var(--accent);
-  transition: transform 0.4s var(--ease);
-}
-
-.site-name:hover::before {
-  transform: scale(1.4);
 }
 
 .site-nav {
@@ -202,7 +196,7 @@ main {
 }
 
 .theme-toggle {
-  display: inline-grid;
+  display: none;
   place-items: center;
   width: 2.5rem;
   height: 2.5rem;
@@ -213,6 +207,10 @@ main {
   color: var(--muted);
   cursor: pointer;
   transition: color 0.2s, transform 0.5s var(--ease);
+}
+
+.js .theme-toggle {
+  display: inline-grid;
 }
 
 .theme-toggle:hover {
@@ -227,15 +225,16 @@ main {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 0.25rem 1.5rem;
+  gap: 0.35rem 1.5rem;
   margin-top: 7rem;
   padding: 2rem 0 2.5rem;
-  color: var(--faint);
+  color: var(--muted);
   font-size: 0.8125rem;
+  line-height: 1.5;
 }
 
 .site-footer a {
-  color: var(--muted);
+  color: inherit;
   /* The email address is one unbreakable word; without this it sets the page's
      minimum width at 320px reflow or large text sizes. */
   overflow-wrap: anywhere;
@@ -591,6 +590,12 @@ main {
   color: var(--accent);
 }
 
+/* The margin outline is plain HTML (no script needed to show it); scripts only mark
+   the current section. */
+.post-outline {
+  display: none;
+}
+
 @media (min-width: 78rem) {
   .post {
     --toc-width: 13rem;
@@ -606,38 +611,46 @@ main {
   }
 
   .post > .post-toc {
+    display: none;
+  }
+
+  .post > .post-outline {
+    display: block;
     grid-column: 1;
     grid-row: 2 / span 3;
     align-self: start;
     position: sticky;
     top: 2.5rem;
     max-height: calc(100vh - 5rem);
-    margin: 0.35rem 0 0;
+    margin-top: 0.35rem;
     overflow-y: auto;
     font-size: 0.8125rem;
     scrollbar-width: none;
   }
 
-  .post-toc > summary {
-    display: none;
+  .post-outline ol {
+    list-style: none;
   }
 
-  .post-toc ol {
-    margin: 0;
-    padding: 0;
-    border: 0;
-  }
-
-  .post-toc li {
-    margin: 0;
-  }
-
-  .post-toc a {
+  .post-outline a {
     position: relative;
+    display: block;
     padding: 0.3rem 0 0.3rem 1rem;
+    color: var(--muted);
+    line-height: 1.4;
+    text-wrap: pretty;
+    transition: color 0.2s;
   }
 
-  .post-toc a::before {
+  .post-outline a:hover {
+    color: var(--text);
+  }
+
+  .post-outline a[aria-current="location"] {
+    color: var(--accent);
+  }
+
+  .post-outline a::before {
     content: "";
     position: absolute;
     top: 0.85em;
@@ -649,20 +662,16 @@ main {
     transition: width 0.25s var(--ease), opacity 0.25s;
   }
 
-  .post-toc a[aria-current="location"]::before {
+  .post-outline a[aria-current="location"]::before {
     width: 0.65rem;
     opacity: 1;
   }
 
-  .post-toc .toc-level-3 {
-    padding-left: 0;
-  }
-
-  .post-toc .toc-level-3 a {
+  .post-outline .toc-level-3 a {
     padding-left: 1.75rem;
   }
 
-  .post-toc .toc-level-3 a::before {
+  .post-outline .toc-level-3 a::before {
     left: 0.75rem;
   }
 }
@@ -1022,7 +1031,6 @@ main {
   transform: scaleX(0);
   transform-origin: left center;
   will-change: transform;
-  view-transition-name: reading-progress;
 }
 
 /* ==========================================================================
@@ -1232,28 +1240,6 @@ main {
    Motion
    ========================================================================== */
 
-@media (prefers-reduced-motion: no-preference) {
-  @view-transition {
-    navigation: auto;
-  }
-
-  ::view-transition-old(root) {
-    animation: 0.16s ease-in both fade-out;
-  }
-
-  ::view-transition-new(root) {
-    animation: 0.32s var(--ease) both fade-up;
-  }
-}
-
-@keyframes fade-out {
-  to { opacity: 0; }
-}
-
-@keyframes fade-up {
-  from { opacity: 0; transform: translateY(6px); }
-}
-
 /* Theme switch: a circle grows out of the toggle (animated from main.js). */
 .theme-switching::view-transition-old(root),
 .theme-switching::view-transition-new(root) {
@@ -1261,10 +1247,6 @@ main {
   mix-blend-mode: normal;
 }
 
-.theme-switching .site-header,
-.theme-switching .reading-progress {
-  view-transition-name: none;
-}
 
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1402,6 +1384,7 @@ main {
   .post-footer,
   .reader-settings,
   .post-toc,
+  .post-outline,
   .reading-dock {
     display: none !important;
   }
