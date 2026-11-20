@@ -2,11 +2,9 @@
   <header class="post-header">
     <h1>{{postTitle}}</h1>
     <div class="post-header-details" lang="en">
-      <div class="post-meta">
-        <time datetime="{{date}}">{{dateFormatted}}</time>
-        <span class="reading-time">{{readingTime}} min read</span>
-        {{#if tags}}<span class="post-tags">{{tags}}</span>{{/if}}
-      </div>
+      <p class="post-meta">
+        <time datetime="{{date}}">{{dateFormatted}}</time><span aria-hidden="true"> · </span><span class="reading-time">{{readingTime}} min read</span>
+      </p>
       <details class="reader-settings">
         <summary aria-label="Reading settings"><span aria-hidden="true">Aa</span></summary>
         <div class="reader-settings-panel">
@@ -40,7 +38,7 @@
     </div>
   </header>
   <details lang="en" class="post-toc" id="post-toc" hidden>
-    <summary>In this article <span id="post-toc-count"></span></summary>
+    <summary>Contents <span id="post-toc-count"></span></summary>
     <nav aria-label="Table of contents">
       <ol id="post-toc-list" lang="{{postLang}}"></ol>
     </nav>
@@ -48,8 +46,11 @@
   <div class="post-body">
     {{{body}}}
   </div>
-  <nav lang="en" class="post-nav" aria-label="Post navigation">
-    {{#if prevPost}}<a href="/posts/{{prevSlug}}/" class="post-nav-prev">← {{prevTitle}}</a>{{/if}}
-    {{#if nextPost}}<a href="/posts/{{nextSlug}}/" class="post-nav-next">{{nextTitle}} →</a>{{/if}}
-  </nav>
+  <footer class="post-footer" lang="en">
+    {{#if tags}}<p class="post-tags">{{tags}}</p>{{/if}}
+    <nav class="post-nav" aria-label="Post navigation">
+      {{#if prevPost}}<a href="/posts/{{prevSlug}}/" class="post-nav-prev" rel="prev"><span class="post-nav-label">← Older</span><span class="post-nav-title">{{prevTitle}}</span></a>{{/if}}
+      {{#if nextPost}}<a href="/posts/{{nextSlug}}/" class="post-nav-next" rel="next"><span class="post-nav-label">Newer →</span><span class="post-nav-title">{{nextTitle}}</span></a>{{/if}}
+    </nav>
+  </footer>
 </article>

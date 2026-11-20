@@ -7,8 +7,10 @@ const {
   createTableOfContentsEntries,
   createFrameScheduler,
   dismissReaderSettings,
+  findActiveHeadingIndex,
   initializeTableOfContents,
   isNavActive,
+  markActiveTocLink,
   normalizeReaderPreferences,
   readReaderPreferences,
   readStoredTheme,
@@ -19,6 +21,7 @@ const {
   stepReaderSize,
   subscribeToMediaChanges,
   themeControlState,
+  themeRevealRadius,
   updateReadingProgressBar,
   writeReaderPreferences,
   writeStoredTheme
@@ -204,7 +207,6 @@ assert.strictEqual(subscribeToMediaChanges({}, () => {}), false);
 
 assert.strictEqual(isNavActive('/', '/'), true);
 assert.strictEqual(isNavActive('/posts/example/', '/'), true);
-assert.strictEqual(isNavActive('/archive/', '/archive/'), true);
 assert.strictEqual(isNavActive('/about/', '/about/'), true);
 assert.strictEqual(isNavActive('/404.html', '/'), false);
 
@@ -246,5 +248,25 @@ scheduledFrames[0]();
 assert.strictEqual(scheduledUpdates, 1);
 assert.strictEqual(queueUpdate(), true);
 assert.strictEqual(scheduledFrames.length, 2);
+
+assert.strictEqual(findActiveHeadingIndex([], 300), -1);
+assert.strictEqual(findActiveHeadingIndex([400, 900, 1500], 300), -1);
+assert.strictEqual(findActiveHeadingIndex([300, 900, 1500], 300), 0);
+assert.strictEqual(findActiveHeadingIndex([-800, -200, 250, 1200], 300), 2);
+assert.strictEqual(findActiveHeadingIndex([-3000, -2000, -1000], 300), 2);
+
+const tocLinkAttributes = [{}, {}, {}];
+const tocLinks = tocLinkAttributes.map(attributes => ({
+  setAttribute: (name, value) => { attributes[name] = value; },
+  removeAttribute: name => { delete attributes[name]; }
+}));
+markActiveTocLink(tocLinks, 1);
+assert.deepStrictEqual(tocLinkAttributes, [{}, { 'aria-current': 'location' }, {}]);
+markActiveTocLink(tocLinks, -1);
+assert.deepStrictEqual(tocLinkAttributes, [{}, {}, {}]);
+
+assert.strictEqual(themeRevealRadius(0, 0, 3, 4), 5);
+assert.strictEqual(themeRevealRadius(3, 4, 3, 4), 5);
+assert.strictEqual(themeRevealRadius(100, 50, 400, 300), Math.hypot(300, 250));
 
 console.log('Client tests passed');

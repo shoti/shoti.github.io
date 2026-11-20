@@ -1,12 +1,11 @@
-<h1 class="intro">Senior Software Engineer writing about code and things.</h1>
-<section class="post-list" aria-label="Latest posts">
+<h1 class="intro">Senior Software Engineer <span>writing about code and things.</span></h1>
+<section class="post-list" aria-label="Posts">
   {{#each posts}}
-  <article class="post-item">
-    <time datetime="{{date}}">{{dateFormatted}}</time>
-    <div>
-      <a href="/posts/{{slug}}/">{{title}}</a>
-      <span class="post-desc">{{description}}</span>
-    </div>
+  <article class="post-item" lang="{{lang}}">
+    <span class="post-item-number" aria-hidden="true">{{number}}</span>
+    <h2 class="post-item-title"><a href="/posts/{{slug}}/">{{title}}</a></h2>
+    <p class="post-item-desc">{{description}}</p>
+    <p class="post-item-meta" lang="en"><time datetime="{{date}}">{{dateFormatted}}</time><span aria-hidden="true"> · </span><span>{{readingTime}} min read</span></p>
   </article>
   {{/each}}
 </section>

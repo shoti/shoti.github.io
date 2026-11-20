@@ -27,7 +27,6 @@
   {{#if ogImage}}<meta name="twitter:image" content="{{ogImage}}">
   {{#if ogImageAlt}}<meta name="twitter:image:alt" content="{{ogImageAlt}}">{{/if}}{{/if}}
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="alternate" type="application/rss+xml" title="{{feedTitle}}" href="{{feedUrl}}">
   <script>
     try {
       const theme = localStorage.getItem('theme');
@@ -55,25 +54,18 @@
   <a lang="en" class="skip-link" href="#main-content">{{skipLabel}}</a>
   {{#if readingProgress}}<div class="reading-progress" id="reading-progress" role="progressbar" lang="en" aria-label="{{progressLabel}}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>{{/if}}
   <header class="site-header" lang="en">
-    <div class="header-inner">
-      <div class="header-title">
-        <a href="/" class="site-name">Shota Mtvarelishvili</a>
-        <span class="site-tagline">Senior Software Engineer · Tbilisi, Georgia</span>
-      </div>
-      <nav class="site-nav" aria-label="{{primaryNavLabel}}">
-        <a href="/">{{blogLabel}}</a>
-        <a href="/archive/">{{archiveLabel}}</a>
-        <a href="/about/">{{aboutLabel}}</a>
-        <a href="/rss.xml">RSS</a>
-        <button id="theme-toggle" class="theme-toggle" type="button" aria-label="{{themeLabel}}" aria-pressed="false"><span aria-hidden="true">◐</span></button>
-      </nav>
-    </div>
+    <a href="/" class="site-name">Shota Mtvarelishvili</a>
+    <nav class="site-nav" aria-label="{{primaryNavLabel}}">
+      <a href="/about/">{{aboutLabel}}</a>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="{{themeLabel}}" aria-pressed="false"><svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor"/></svg></button>
+    </nav>
   </header>
   <main id="main-content">
     {{{content}}}
   </main>
   <footer class="site-footer" lang="en">
-    <p>© 2026 Shota Mtvarelishvili · <a href="mailto:mtvarelishvili@proton.me">mtvarelishvili@proton.me</a> · <a href="https://github.com/shoti/shoti.github.io">{{sourceLabel}}</a></p>
+    <p>© 2026 Shota Mtvarelishvili · Tbilisi</p>
+    <p><a href="mailto:mtvarelishvili@proton.me">mtvarelishvili@proton.me</a> · <a href="https://github.com/shoti/shoti.github.io">{{sourceLabel}}</a></p>
   </footer>
   <script src="/js/main.js"></script>
 </body>
