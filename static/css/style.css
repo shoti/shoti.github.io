@@ -4,15 +4,16 @@
 
 :root {
   color-scheme: light;
-  --bg: #fbfaf7;
-  --text: #1d1c1a;
-  --muted: #6b675f;
-  --faint: #8f8a81;
-  --rule: #e7e3dc;
-  --surface: #f2efe9;
-  --accent: #b5432c;
-  --accent-soft: rgb(181 67 44 / 0.32);
-  --shadow: 0 1px 2px rgb(29 28 26 / 0.04), 0 12px 32px -8px rgb(29 28 26 / 0.14);
+  /* Warm paper rather than screen white; ink is softened to match. */
+  --bg: #f3eee6;
+  --text: #2a2621;
+  --muted: #665e54;
+  --faint: #857c70;
+  --rule: #ddd5c8;
+  --surface: #ebe5da;
+  --accent: #a63f27;
+  --accent-soft: rgb(166 63 39 / 0.3);
+  --shadow: 0 1px 2px rgb(42 38 33 / 0.05), 0 12px 32px -8px rgb(42 38 33 / 0.16);
 
   --font-serif: 'Newsreader', 'Noto Serif Georgian', Georgia, 'Times New Roman', serif;
   --font-sans: 'Geist', 'Noto Sans Georgian', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
