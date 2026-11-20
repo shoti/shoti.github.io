@@ -154,24 +154,33 @@ assert.match(post, /<div class="post-body">\s*<p>/);
 assert.match(post, /<h2 id="section-[a-z0-9-]+">/);
 assert.doesNotMatch(post, /\{\{\{?[\w#/ ]+\}?\}\}/);
 assert.match(post, /<html lang="en">/);
-const blogRss = fs.readFileSync(path.join(distDir, 'rss.xml'), 'utf8');
-assert.match(blogRss, /<item xml:lang="en">/);
+// Every published post is listed on the homepage, numbered oldest-first.
+const publishedPosts = loadPosts();
+assert.strictEqual((home.match(/<article class="post-item"/g) || []).length, publishedPosts.length);
+assert.match(home, new RegExp('<span class="post-item-number" aria-hidden="true">' +
+  String(publishedPosts.length).padStart(2, '0') + '</span>'));
+assert.match(home, /<p class="post-item-meta" lang="en"><time datetime="\d{4}-\d{2}-\d{2}">[^<]+<\/time><span aria-hidden="true"> · <\/span><span>\d+ min read<\/span><\/p>/);
 assert.match(notFound, /<a href="\/">Go back to the blog<\/a>/);
 // All articles use the same English site navigation and reading controls.
 for (const page of [home, post]) {
   assert.match(page, /<header class="site-header" lang="en">/);
   assert.match(page, /<nav class="site-nav" aria-label="Primary">/);
-  assert.match(page, /<a href="\/">Blog<\/a>/);
-  assert.match(page, /<a href="\/archive\/">Archive<\/a>/);
+  assert.match(page, /<a href="\/" class="site-name">Shota Mtvarelishvili<\/a>/);
   assert.match(page, /<a href="\/about\/">About<\/a>/);
   assert.match(page, /id="theme-toggle"[^>]+aria-label="Switch to dark mode"/);
   assert.match(page, /github\.com\/shoti\/shoti\.github\.io">Source<\/a>/);
   assert.doesNotMatch(page, /(?:href|src)="\/news(?:\/|")|news-chrome|news-page/);
 }
+// The archive page and RSS feed are retired: no output, no links, no feed discovery.
+for (const page of [home, post, notFound]) {
+  assert.doesNotMatch(page, /href="\/archive\/"|href="\/rss\.xml"|application\/rss\+xml/);
+}
+assert.strictEqual(fs.existsSync(path.join(distDir, 'archive')), false);
+assert.strictEqual(fs.existsSync(path.join(distDir, 'rss.xml')), false);
 assert.strictEqual(fs.existsSync(path.join(distDir, 'news')), false);
 assert.strictEqual(fs.existsSync(path.join(distDir, 'images', 'news-social.jpg')), false);
 const sitemap = fs.readFileSync(path.join(distDir, 'sitemap.xml'), 'utf8');
 assert.doesNotMatch(sitemap, /<loc>https:\/\/shoti\.github\.io\/news\//);
-assert.match(home, /<link rel="alternate" type="application\/rss\+xml" title="Shota Mtvarelishvili" href="\/rss\.xml">/);
+assert.doesNotMatch(sitemap, /\/archive\//);
 
 console.log('Build tests passed');

@@ -1,15 +1,14 @@
 <article class="not-found">
-  <h1>404</h1>
-  <p>Page not found. <a href="/">Go back to the blog</a>, or try one of these:</p>
+  <p class="not-found-code" aria-hidden="true">404</p>
+  <h1>This page doesn’t exist.</h1>
+  <p>It may have moved, or never was. <a href="/">Go back to the blog</a>, or try one of these:</p>
 </article>
 {{#if posts}}
-<section class="post-list">
+<section class="post-list post-list-compact" aria-label="Recent posts">
   {{#each posts}}
-  <article class="post-item">
-    <time datetime="{{date}}">{{dateFormatted}}</time>
-    <div>
-      <a href="/posts/{{slug}}/">{{title}}</a>
-    </div>
+  <article class="post-item" lang="{{lang}}">
+    <h2 class="post-item-title"><a href="/posts/{{slug}}/">{{title}}</a></h2>
+    <p class="post-item-meta" lang="en"><time datetime="{{date}}">{{dateFormatted}}</time></p>
   </article>
   {{/each}}
 </section>

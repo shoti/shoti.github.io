@@ -158,6 +158,29 @@ function initializeTableOfContents(container, articleBody) {
   return entries;
 }
 
+// Index of the section being read: the last heading whose top has scrolled past the
+// reading line. -1 while the reader is still above the first heading.
+function findActiveHeadingIndex(headingTops, readingLine) {
+  let active = -1;
+  for (let index = 0; index < headingTops.length; index++) {
+    if (headingTops[index] <= readingLine) active = index;
+    else break;
+  }
+  return active;
+}
+
+function markActiveTocLink(links, activeIndex) {
+  links.forEach((link, index) => {
+    if (index === activeIndex) link.setAttribute('aria-current', 'location');
+    else link.removeAttribute('aria-current');
+  });
+}
+
+// Radius that lets a circle centred on (x, y) cover the whole viewport.
+function themeRevealRadius(x, y, width, height) {
+  return Math.hypot(Math.max(x, width - x), Math.max(y, height - y));
+}
+
 function resolveTheme(explicitTheme, prefersDark) {
   if (explicitTheme === 'dark' || explicitTheme === 'light') return explicitTheme;
   return prefersDark ? 'dark' : 'light';
@@ -237,17 +260,45 @@ if (typeof document !== 'undefined') {
     updateThemeControl();
     subscribeToMediaChanges(mediaQuery, updateThemeControl);
 
-    // Enable theme transitions after initial paint to prevent flash
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      root.classList.add('transitions-ready');
-    }));
+    const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+    const applyTheme = theme => {
+      root.setAttribute('data-theme', theme);
+      writeStoredTheme(theme);
+      updateThemeControl();
+    };
+
+    // Where supported, the new theme grows out of the toggle as a circle.
+    const switchTheme = async (theme, button) => {
+      if (typeof document.startViewTransition !== 'function' || reducedMotion.matches) {
+        applyTheme(theme);
+        return;
+      }
+      const rect = button.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      const radius = themeRevealRadius(x, y, innerWidth, innerHeight);
+      root.classList.add('theme-switching');
+      const transition = document.startViewTransition(() => applyTheme(theme));
+      try {
+        await transition.ready;
+        root.animate(
+          { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] },
+          { duration: 480, easing: 'cubic-bezier(0.2, 0.7, 0.2, 1)', pseudoElement: '::view-transition-new(root)' }
+        );
+        await transition.finished;
+      } catch (error) {
+        // The theme is already applied by the update callback; only the animation was lost.
+        console.warn('Theme transition animation skipped:', error);
+      } finally {
+        root.classList.remove('theme-switching');
+      }
+    };
 
     for (const button of toggles) {
       button.addEventListener('click', () => {
         const next = effectiveTheme() === 'dark' ? 'light' : 'dark';
-        root.setAttribute('data-theme', next);
-        writeStoredTheme(next);
-        updateThemeControl();
+        switchTheme(next, button);
         const rotation = parseInt(button.dataset.r || '0', 10) + 180;
         button.dataset.r = rotation;
         button.style.transform = `rotate(${rotation}deg)`;
@@ -318,10 +369,24 @@ if (typeof document !== 'undefined') {
     syncReaderControls();
 
     // Article outline
-    initializeTableOfContents(
-      document.getElementById('post-toc'),
-      document.querySelector('.post-body')
-    );
+    const toc = document.getElementById('post-toc');
+    const tocEntries = initializeTableOfContents(toc, document.querySelector('.post-body'));
+    if (tocEntries.length > 0) {
+      // Wide screens pin the outline in the margin, always expanded.
+      const wideLayout = matchMedia('(min-width: 78rem)');
+      const syncTocLayout = () => { toc.open = wideLayout.matches; };
+      syncTocLayout();
+      subscribeToMediaChanges(wideLayout, syncTocLayout);
+
+      const tocHeadings = tocEntries.map(entry => document.getElementById(entry.id));
+      const tocLinks = Array.from(toc.querySelectorAll('a'));
+      const updateActiveSection = () => markActiveTocLink(tocLinks, findActiveHeadingIndex(
+        tocHeadings.map(heading => heading.getBoundingClientRect().top),
+        innerHeight * 0.3
+      ));
+      window.addEventListener('scroll', createFrameScheduler(updateActiveSection), { passive: true });
+      updateActiveSection();
+    }
 
     // Active nav link
     const { pathname } = location;
@@ -360,8 +425,10 @@ if (typeof module !== 'undefined') {
     createTableOfContentsEntries,
     createFrameScheduler,
     dismissReaderSettings,
+    findActiveHeadingIndex,
     initializeTableOfContents,
     isNavActive,
+    markActiveTocLink,
     normalizeReaderPreferences,
     readReaderPreferences,
     readStoredTheme,
@@ -372,6 +439,7 @@ if (typeof module !== 'undefined') {
     stepReaderSize,
     subscribeToMediaChanges,
     themeControlState,
+    themeRevealRadius,
     updateReadingProgressBar,
     writeReaderPreferences,
     writeStoredTheme

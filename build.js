@@ -327,13 +327,8 @@ function wordCount(text) {
   return text.split(/\s+/).filter(Boolean).length;
 }
 
-function escapeXml(text) {
-  return String(text)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
+function readingTime(words) {
+  return Math.max(1, Math.round(words / 200));
 }
 
 function copyDir(src, dest) {
@@ -476,7 +471,6 @@ const startTime = Date.now();
 const baseTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'base.html'), 'utf-8');
 const indexTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'index.html'), 'utf-8');
 const postTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'post.html'), 'utf-8');
-const archiveTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'archive.html'), 'utf-8');
 const aboutTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, 'about.html'), 'utf-8');
 const notFoundTemplate = fs.readFileSync(path.join(TEMPLATES_DIR, '404.html'), 'utf-8');
 
@@ -531,16 +525,15 @@ copyDir(STATIC_DIR, DIST_DIR);
 
 // --- Generate Pages ---
 
-const FONT_HREF_LATIN = 'https://fonts.googleapis.com/css2?family=IBM+Plex+Mono&' +
-  'family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400;1,600&' +
-  'family=IBM+Plex+Serif:ital,wght@0,400;0,600;1,400;1,600&display=swap';
+const FONT_HREF_LATIN = 'https://fonts.googleapis.com/css2?family=Geist:wght@400..600&' +
+  'family=Geist+Mono:wght@400..500&' +
+  'family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..600&display=swap';
 // Keep the shared Latin typefaces; add fallbacks for Georgian article text.
 const FONT_HREF_GEORGIAN = FONT_HREF_LATIN.replace('&display=swap', '') +
-  '&family=Noto+Sans+Georgian:wght@400;500;600;700&' +
-  'family=Noto+Serif+Georgian:wght@400..900&display=swap';
-const FONT_HREF_POST_LIST = posts.some(post => post.lang === 'ka')
-  ? FONT_HREF_LATIN.replace('&display=swap', '') + '&family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap'
-  : FONT_HREF_LATIN;
+  '&family=Noto+Sans+Georgian:wght@400..600&' +
+  'family=Noto+Serif+Georgian:wght@400..600&display=swap';
+// Post titles in lists are set in the serif, so Georgian titles need both Georgian faces.
+const FONT_HREF_POST_LIST = posts.some(post => post.lang === 'ka') ? FONT_HREF_GEORGIAN : FONT_HREF_LATIN;
 
 function wrapInBase(content, data) {
   return render(baseTemplate, Object.assign({
@@ -549,15 +542,11 @@ function wrapInBase(content, data) {
     ogLocale: 'en_US',
     skipLabel: 'Skip to content',
     primaryNavLabel: 'Primary',
-    blogLabel: 'Blog',
-    archiveLabel: 'Archive',
     aboutLabel: 'About',
     themeLabel: 'Switch to dark mode',
     sourceLabel: 'Source',
     progressLabel: 'Reading progress',
     robots: '',
-    feedUrl: '/rss.xml',
-    feedTitle: 'Shota Mtvarelishvili',
     fontHref: FONT_HREF_LATIN
   }, data));
 }
@@ -569,32 +558,22 @@ const SITE_BYLINE = Object.freeze({
   jobTitle: 'Senior Software Engineer'
 });
 
-function breadcrumbSchema(trail) {
-  return {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: trail.map((step, index) => ({
-      '@type': 'ListItem',
-      position: index + 1,
-      name: step.name,
-      item: step.url
-    }))
-  };
-}
-
 function jsonLdScript(...schemas) {
   return schemas
     .map(schema => `<script type="application/ld+json">${serializeJsonForHtml(schema)}</script>`)
     .join('');
 }
 
-// Homepage
-const homePosts = posts.slice(0, 10).map(p => ({
+// Homepage — the complete index of posts, numbered oldest-first so numbers stay stable.
+const homePosts = posts.map((p, idx) => ({
   title: p.title,
   slug: p.slug,
   date: p.date,
   dateFormatted: formatDate(p.date),
-  description: p.description
+  description: p.description,
+  lang: p.lang || 'en',
+  number: String(posts.length - idx).padStart(2, '0'),
+  readingTime: readingTime(p._words)
 }));
 const indexContent = render(indexTemplate, { posts: homePosts });
 const homeOgSvg = generateOgImage('Shota Mtvarelishvili');
@@ -650,7 +629,7 @@ posts.forEach((post, idx) => {
     postTitle: post.title,
     date: post.date,
     dateFormatted: formatDate(post.date),
-    readingTime: Math.max(1, Math.round(post._words / 200)),
+    readingTime: readingTime(post._words),
     tags: tags,
     body: post._html,
     prevPost: prevPost ? true : false,
@@ -698,57 +677,6 @@ posts.forEach((post, idx) => {
   writeFile(path.join(DIST_DIR, 'posts', post.slug, 'index.html'), page);
 });
 
-// Archive page
-const yearMap = {};
-posts.forEach(p => {
-  const year = p.date.slice(0, 4);
-  if (!yearMap[year]) yearMap[year] = [];
-  yearMap[year].push({
-    title: p.title,
-    slug: p.slug,
-    date: p.date,
-    dateFormatted: formatDate(p.date)
-  });
-});
-const years = Object.keys(yearMap).sort().reverse().map(y => ({
-  year: y, posts: yearMap[y]
-}));
-const archiveContent = render(archiveTemplate, { years: years });
-const archivePage = wrapInBase(archiveContent, {
-  fontHref: FONT_HREF_POST_LIST,
-  title: 'Archive \u2014 Shota Mtvarelishvili',
-  ogTitle: 'Archive',
-  description: 'All posts on shoti.github.io.',
-  canonical: BASE_URL + '/archive/',
-  ogType: 'website',
-  head: jsonLdScript(
-    {
-      '@context': 'https://schema.org',
-      '@type': 'CollectionPage',
-      name: 'Archive',
-      url: BASE_URL + '/archive/',
-      inLanguage: 'en',
-      isPartOf: { '@type': 'WebSite', name: 'Shota Mtvarelishvili', url: BASE_URL + '/' },
-      mainEntity: {
-        '@type': 'ItemList',
-        numberOfItems: posts.length,
-        itemListElement: posts.map((post, index) => ({
-          '@type': 'ListItem',
-          position: index + 1,
-          name: post.title,
-          url: BASE_URL + '/posts/' + post.slug + '/'
-        }))
-      }
-    },
-    breadcrumbSchema([
-      { name: 'Blog', url: BASE_URL + '/' },
-      { name: 'Archive', url: BASE_URL + '/archive/' }
-    ])
-  ),
-  readingProgress: false
-});
-writeFile(path.join(DIST_DIR, 'archive', 'index.html'), archivePage);
-
 // About page
 const aboutData = loadAbout();
 const aboutBody = parseMarkdown(aboutData.body);
@@ -795,40 +723,10 @@ const notFoundPage = wrapInBase(notFoundContent, {
 });
 writeFile(path.join(DIST_DIR, '404.html'), notFoundPage);
 
-// --- RSS Feed ---
-
-const rssItems = posts.slice(0, 20).map(p => {
-  return '    <item xml:lang="' + (p.lang || 'en') + '">\n' +
-    '      <title>' + escapeXml(p.title) + '</title>\n' +
-    '      <link>' + BASE_URL + '/posts/' + p.slug + '/</link>\n' +
-    '      <guid>' + BASE_URL + '/posts/' + p.slug + '/</guid>\n' +
-    '      <pubDate>' + new Date(p.date + 'T00:00:00Z').toUTCString() + '</pubDate>\n' +
-    '      <description>' + escapeXml(p.description) + '</description>\n' +
-    '      <content:encoded><![CDATA[' + p._html + ']]></content:encoded>\n' +
-    '      <author>mtvarelishvili@proton.me (Shota Mtvarelishvili)</author>\n' +
-    '    </item>';
-}).join('\n');
-
-const rss = '<?xml version="1.0" encoding="UTF-8"?>\n' +
-  '<rss version="2.0" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:atom="http://www.w3.org/2005/Atom">\n' +
-  '  <channel>\n' +
-  '    <title>Shota Mtvarelishvili</title>\n' +
-  '    <link>' + BASE_URL + '</link>\n' +
-  '    <description>Senior Software Engineer writing about code and things.</description>\n' +
-  '    <managingEditor>mtvarelishvili@proton.me (Shota Mtvarelishvili)</managingEditor>\n' +
-  '    <atom:link href="' + BASE_URL + '/rss.xml" rel="self" type="application/rss+xml"/>\n' +
-  (posts.length > 0 ? '    <lastBuildDate>' + new Date(posts[0].date + 'T00:00:00Z').toUTCString() + '</lastBuildDate>\n' : '') +
-  rssItems + '\n' +
-  '  </channel>\n' +
-  '</rss>\n';
-
-writeFile(path.join(DIST_DIR, 'rss.xml'), rss);
-
 // --- Sitemap ---
 
 const sitemapEntries = [
   { url: BASE_URL + '/', date: posts.length > 0 ? posts[0].date : null },
-  { url: BASE_URL + '/archive/', date: posts.length > 0 ? posts[0].date : null },
   { url: BASE_URL + '/about/', date: null }
 ].concat(posts.map(p => ({ url: BASE_URL + '/posts/' + p.slug + '/', date: p.date })));
 
